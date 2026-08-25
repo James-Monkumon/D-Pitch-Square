@@ -1,0 +1,700 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum RoleName {
+  PLAYER
+  ACADEMY
+  SCOUT
+  COACH
+  ADMIN
+}
+
+enum VerificationStatus {
+  NOT_REQUESTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PreferredFoot {
+  LEFT
+  RIGHT
+  BOTH
+}
+
+enum PlayerPosition {
+  GOALKEEPER
+  CENTER_BACK
+  LEFT_BACK
+  RIGHT_BACK
+  DEFENSIVE_MIDFIELDER
+  CENTRAL_MIDFIELDER
+  ATTACKING_MIDFIELDER
+  LEFT_WINGER
+  RIGHT_WINGER
+  SECOND_STRIKER
+  STRIKER
+}
+
+enum AcademyMediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  email           String     @unique @db.VarChar(320)
+  passwordHash    String     @map("password_hash")
+  status          UserStatus @default(PENDING)
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  roles               UserRole[]
+  refreshTokens       RefreshToken[]
+  emailVerifications  EmailVerification[]
+  passwordResetTokens PasswordResetToken[]
+
+  playerProfile  PlayerProfile?
+  academyProfile AcademyProfile?
+  scoutProfile   ScoutProfile?
+  coachProfile   CoachProfile?
+
+  // Following relationships
+  academyFollowers AcademyFollower[]
+  playerFollowers  PlayerFollower[]
+  coachFollowers   CoachFollower[]
+  scoutFollowers   ScoutFollower[]
+
+  // Like relationships
+  playerLikes  PlayerLike[]
+  academyLikes AcademyLike[]
+  coachLikes   CoachLike[]
+  scoutLikes   ScoutLike[]
+
+  @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      RoleName @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(120)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verifications")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model PlayerProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  profilePicture String? @map("profile_picture")
+  coverPhoto     String? @map("cover_photo")
+
+  fullName    String    @map("full_name") @db.VarChar(150)
+  dateOfBirth DateTime? @map("date_of_birth")
+
+  nationality String? @db.VarChar(100)
+
+  country String? @db.VarChar(100)
+  state   String? @db.VarChar(100)
+  city    String? @db.VarChar(100)
+  address String? @db.Text
+
+  currentClub        String? @map("current_club")
+  currentAcademyName String? @map("current_academy_name")
+
+  height Int?
+  weight Int?
+
+  preferredFoot     PreferredFoot?  @map("preferred_foot")
+  primaryPosition   PlayerPosition? @map("primary_position")
+  secondaryPosition PlayerPosition? @map("secondary_position")
+
+  jerseyNumber Int? @map("jersey_number")
+
+  biography          String? @db.Text
+  contactInformation String? @map("contact_information") @db.Text
+
+  socialMediaLinks Json? @map("social_media_links")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  statistics   PlayerStatistics?
+  achievements PlayerAchievement[]
+
+  academyMemberships AcademyPlayerMembership[]
+  teamMemberships    AcademyTeamPlayer[]
+
+  followers PlayerFollower[]
+  likes     PlayerLike[]
+
+  @@index([nationality])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([primaryPosition])
+  @@index([preferredFoot])
+  @@index([dateOfBirth])
+  @@index([currentAcademyName])
+  @@index([height])
+  @@map("player_profiles")
+}
+
+model PlayerFollower {
+  id       String @id @default(uuid()) @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, userId])
+  @@index([playerId])
+  @@index([userId])
+  @@map("player_followers")
+}
+
+model PlayerLike {
+  id       String @id @default(uuid()) @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, userId])
+  @@index([playerId])
+  @@index([userId])
+  @@map("player_likes")
+}
+
+model PlayerStatistics {
+  id       String @id @default(uuid()) @db.Uuid
+  playerId String @unique @map("player_id") @db.Uuid
+
+  matchesPlayed  Int @default(0) @map("matches_played")
+  matchesStarted Int @default(0) @map("matches_started")
+  minutesPlayed  Int @default(0) @map("minutes_played")
+
+  goals   Int @default(0)
+  assists Int @default(0)
+
+  yellowCards Int @default(0) @map("yellow_cards")
+  redCards    Int @default(0) @map("red_cards")
+
+  cleanSheets Int @default(0) @map("clean_sheets")
+  saves       Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("player_statistics")
+}
+
+model PlayerAchievement {
+  id       String @id @default(uuid()) @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+
+  title        String  @db.VarChar(200)
+  description  String? @db.Text
+  year         Int?
+  organization String? @db.VarChar(150)
+  imageUrl     String? @map("image_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@map("player_achievements")
+}
+
+model AcademyProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  logoUrl       String? @map("logo_url")
+  coverImageUrl String? @map("cover_image_url")
+
+  academyName String @map("academy_name") @db.VarChar(200)
+
+  country String? @db.VarChar(100)
+  state   String? @db.VarChar(100)
+  city    String? @db.VarChar(100)
+  address String? @db.Text
+
+  foundedYear Int? @map("founded_year")
+
+  description String? @db.Text
+
+  contactEmail String? @map("contact_email") @db.VarChar(320)
+  contactPhone String? @map("contact_phone") @db.VarChar(50)
+
+  websiteUrl       String? @map("website_url")
+  socialMediaLinks Json?   @map("social_media_links")
+
+  verificationStatus VerificationStatus @default(NOT_REQUESTED) @map("verification_status")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  playerMemberships AcademyPlayerMembership[]
+  coachMemberships  AcademyCoachMembership[]
+  teams             AcademyTeam[]
+  media             AcademyMedia[]
+  followers         AcademyFollower[]
+  likes             AcademyLike[]
+  statistics        AcademyStatistics?
+
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([verificationStatus])
+  @@map("academy_profiles")
+}
+
+model AcademyLike {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([academyId, userId])
+  @@index([academyId])
+  @@index([userId])
+  @@map("academy_likes")
+}
+
+model AcademyPlayerMembership {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+  playerId  String @map("player_id") @db.Uuid
+
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  player  PlayerProfile  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([academyId, playerId])
+  @@index([academyId])
+  @@index([playerId])
+  @@map("academy_player_memberships")
+}
+
+model AcademyCoachMembership {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+  coachId   String @map("coach_id") @db.Uuid
+
+  role String? @db.VarChar(150)
+
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  coach   CoachProfile   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@unique([academyId, coachId])
+  @@index([academyId])
+  @@index([coachId])
+  @@map("academy_coach_memberships")
+}
+
+model AcademyTeam {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+
+  name String @db.VarChar(150)
+
+  ageGroup String? @map("age_group") @db.VarChar(100)
+  category String? @db.VarChar(100)
+
+  description String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  players AcademyTeamPlayer[]
+  coaches AcademyTeamCoach[]
+
+  @@index([academyId])
+  @@map("academy_teams")
+}
+
+model AcademyTeamPlayer {
+  id       String @id @default(uuid()) @db.Uuid
+  teamId   String @map("team_id") @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+
+  jerseyNumber Int? @map("jersey_number")
+
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team   AcademyTeam   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, playerId])
+  @@index([teamId])
+  @@index([playerId])
+  @@map("academy_team_players")
+}
+
+model AcademyTeamCoach {
+  id      String @id @default(uuid()) @db.Uuid
+  teamId  String @map("team_id") @db.Uuid
+  coachId String @map("coach_id") @db.Uuid
+
+  role String? @db.VarChar(150)
+
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team  AcademyTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  coach CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, coachId])
+  @@index([teamId])
+  @@index([coachId])
+  @@map("academy_team_coaches")
+}
+
+model AcademyMedia {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+
+  type AcademyMediaType
+
+  title       String? @db.VarChar(200)
+  description String? @db.Text
+
+  url          String  @db.Text
+  thumbnailUrl String? @map("thumbnail_url") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  @@index([academyId])
+  @@index([type])
+  @@map("academy_media")
+}
+
+model AcademyFollower {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([academyId, userId])
+  @@index([academyId])
+  @@index([userId])
+  @@map("academy_followers")
+}
+
+model AcademyStatistics {
+  id        String @id @default(uuid()) @db.Uuid
+  academyId String @unique @map("academy_id") @db.Uuid
+
+  totalPlayers   Int @default(0) @map("total_players")
+  totalCoaches   Int @default(0) @map("total_coaches")
+  totalTeams     Int @default(0) @map("total_teams")
+  totalFollowers Int @default(0) @map("total_followers")
+  totalMedia     Int @default(0) @map("total_media")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  @@map("academy_statistics")
+}
+
+model ScoutProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  profilePicture String? @map("profile_picture")
+
+  fullName String @map("full_name") @db.VarChar(150)
+
+  organization String? @db.VarChar(200)
+
+  country String? @db.VarChar(100)
+  state   String? @db.VarChar(100)
+  city    String? @db.VarChar(100)
+
+  role      String? @db.VarChar(150)
+  biography String? @db.Text
+
+  contactEmail String? @map("contact_email") @db.VarChar(320)
+  contactPhone String? @map("contact_phone") @db.VarChar(50)
+
+  socialMediaLinks Json? @map("social_media_links")
+
+  verificationStatus VerificationStatus @default(NOT_REQUESTED) @map("verification_status")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  followers ScoutFollower[]
+  likes     ScoutLike[]
+
+  @@index([organization])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([verificationStatus])
+  @@map("scout_profiles")
+}
+
+model ScoutFollower {
+  id      String @id @default(uuid()) @db.Uuid
+  scoutId String @map("scout_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  scout ScoutProfile @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([scoutId, userId])
+  @@index([scoutId])
+  @@index([userId])
+  @@map("scout_followers")
+}
+
+model ScoutLike {
+  id      String @id @default(uuid()) @db.Uuid
+  scoutId String @map("scout_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  scout ScoutProfile @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([scoutId, userId])
+  @@index([scoutId])
+  @@index([userId])
+  @@map("scout_likes")
+}
+
+model CoachProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  profilePicture String? @map("profile_picture")
+  coverPhoto     String? @map("cover_photo")
+
+  fullName String @map("full_name") @db.VarChar(150)
+
+  country String? @db.VarChar(100)
+  state   String? @db.VarChar(100)
+  city    String? @db.VarChar(100)
+
+  currentAcademyClub String? @map("current_academy_club") @db.VarChar(200)
+
+  coachingRole String? @map("coaching_role") @db.VarChar(150)
+
+  coachingLicense       String? @map("coaching_license") @db.VarChar(200)
+  coachingCertification String? @map("coaching_certification") @db.VarChar(200)
+
+  yearsOfExperience Int?
+
+  biography          String? @db.Text
+  contactInformation String? @map("contact_information") @db.Text
+
+  socialMediaLinks Json? @map("social_media_links")
+
+  verificationStatus VerificationStatus @default(NOT_REQUESTED) @map("verification_status")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  academyMemberships AcademyCoachMembership[]
+  teamMemberships    AcademyTeamCoach[]
+
+  followers CoachFollower[]
+  likes     CoachLike[]
+
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([coachingRole])
+  @@index([verificationStatus])
+  @@map("coach_profiles")
+}
+
+model CoachFollower {
+  id      String @id @default(uuid()) @db.Uuid
+  coachId String @map("coach_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  coach CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, userId])
+  @@index([coachId])
+  @@index([userId])
+  @@map("coach_followers")
+}
+
+model CoachLike {
+  id      String @id @default(uuid()) @db.Uuid
+  coachId String @map("coach_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  coach CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, userId])
+  @@index([coachId])
+  @@index([userId])
+  @@map("coach_likes")
+}
