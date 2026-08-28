@@ -16,6 +16,7 @@ import { AcademiesService } from './academies.service.js';
 import { AcademyQueryDto } from './dto/academy-query.dto.js';
 import { AddAcademyCoachDto } from './dto/add-academy-coach.dto.js';
 import { AddAcademyPlayerDto } from './dto/add-academy-player.dto.js';
+import { AddTeamPlayerDto } from './dto/add-team-player.dto.js';
 import { CreateAcademyDto } from './dto/create-academy.dto.js';
 import { UpdateAcademyDto } from './dto/update-academy.dto.js';
 let AcademiesController = class AcademiesController {
@@ -32,7 +33,7 @@ let AcademiesController = class AcademiesController {
      * POST /api/v1/academies
      */
     createAcademy(req, dto) {
-        return this.academies.createAcademy(req.user.sub, dto);
+        return this.academies.createAcademy(req.user.id, dto);
     }
     /**
      * Get academies.
@@ -56,7 +57,7 @@ let AcademiesController = class AcademiesController {
      * PATCH /api/v1/academies/:academyId
      */
     updateAcademy(req, academyId, dto) {
-        return this.academies.updateAcademy(req.user.sub, academyId, dto);
+        return this.academies.updateAcademy(req.user.id, academyId, dto);
     }
     /**
      * Soft-delete academy.
@@ -64,7 +65,23 @@ let AcademiesController = class AcademiesController {
      * DELETE /api/v1/academies/:academyId
      */
     deleteAcademy(req, academyId) {
-        return this.academies.deleteAcademy(req.user.sub, academyId);
+        return this.academies.deleteAcademy(req.user.id, academyId);
+    }
+    /**
+   * Get academy statistics.
+   *
+   * GET /api/v1/academies/:academyId/statistics
+   */
+    getAcademyStatistics(academyId) {
+        return this.academies.getAcademyStatistics(academyId);
+    }
+    /**
+     * Request academy verification.
+     *
+     * POST /api/v1/academies/:academyId/verification/request
+     */
+    requestVerification(req, academyId) {
+        return this.academies.requestVerification(req.user.id, academyId);
     }
     // ============================================================
     // ACADEMY PLAYERS
@@ -83,7 +100,7 @@ let AcademiesController = class AcademiesController {
      * POST /api/v1/academies/:academyId/players
      */
     addAcademyPlayer(req, academyId, dto) {
-        return this.academies.addAcademyPlayer(req.user.sub, academyId, dto);
+        return this.academies.addAcademyPlayer(req.user.id, academyId, dto);
     }
     /**
      * Remove player from academy.
@@ -91,7 +108,34 @@ let AcademiesController = class AcademiesController {
      * DELETE /api/v1/academies/:academyId/players/:playerId
      */
     removeAcademyPlayer(req, academyId, playerId) {
-        return this.academies.removeAcademyPlayer(req.user.sub, academyId, playerId);
+        return this.academies.removeAcademyPlayer(req.user.id, academyId, playerId);
+    }
+    // ============================================================
+    // ACADEMY TEAM PLAYERS
+    // ============================================================
+    /**
+     * Add player to a team.
+     *
+     * POST /api/v1/academies/teams/:teamId/players
+     */
+    addTeamPlayer(req, teamId, dto) {
+        return this.academies.addTeamPlayer(req.user.id, teamId, dto);
+    }
+    /**
+     * Get players assigned to a team.
+     *
+     * GET /api/v1/academies/teams/:teamId/players
+     */
+    getTeamPlayers(teamId) {
+        return this.academies.getTeamPlayers(teamId);
+    }
+    /**
+     * Remove player from team.
+     *
+     * DELETE /api/v1/academies/teams/:teamId/players/:playerId
+     */
+    removeTeamPlayer(req, teamId, playerId) {
+        return this.academies.removeTeamPlayer(req.user.id, teamId, playerId);
     }
     // ============================================================
     // ACADEMY COACHES
@@ -110,7 +154,7 @@ let AcademiesController = class AcademiesController {
      * POST /api/v1/academies/:academyId/coaches
      */
     addAcademyCoach(req, academyId, dto) {
-        return this.academies.addAcademyCoach(req.user.sub, academyId, dto);
+        return this.academies.addAcademyCoach(req.user.id, academyId, dto);
     }
     /**
      * Remove coach from academy.
@@ -118,7 +162,7 @@ let AcademiesController = class AcademiesController {
      * DELETE /api/v1/academies/:academyId/coaches/:coachId
      */
     removeAcademyCoach(req, academyId, coachId) {
-        return this.academies.removeAcademyCoach(req.user.sub, academyId, coachId);
+        return this.academies.removeAcademyCoach(req.user.id, academyId, coachId);
     }
     // ============================================================
     // ACADEMY FOLLOW
@@ -129,7 +173,7 @@ let AcademiesController = class AcademiesController {
      * POST /api/v1/academies/:academyId/follow
      */
     followAcademy(req, academyId) {
-        return this.academies.followAcademy(req.user.sub, academyId);
+        return this.academies.followAcademy(req.user.id, academyId);
     }
     /**
      * Unfollow academy.
@@ -137,7 +181,7 @@ let AcademiesController = class AcademiesController {
      * DELETE /api/v1/academies/:academyId/follow
      */
     unfollowAcademy(req, academyId) {
-        return this.academies.unfollowAcademy(req.user.sub, academyId);
+        return this.academies.unfollowAcademy(req.user.id, academyId);
     }
     /**
      * Check whether current user follows academy.
@@ -145,7 +189,7 @@ let AcademiesController = class AcademiesController {
      * GET /api/v1/academies/:academyId/is-following
      */
     isFollowingAcademy(req, academyId) {
-        return this.academies.isFollowingAcademy(req.user.sub, academyId);
+        return this.academies.isFollowingAcademy(req.user.id, academyId);
     }
     /**
      * Get academy follower count.
@@ -164,7 +208,7 @@ let AcademiesController = class AcademiesController {
      * POST /api/v1/academies/:academyId/like
      */
     likeAcademy(req, academyId) {
-        return this.academies.likeAcademy(req.user.sub, academyId);
+        return this.academies.likeAcademy(req.user.id, academyId);
     }
     /**
      * Unlike an academy.
@@ -172,7 +216,7 @@ let AcademiesController = class AcademiesController {
      * DELETE /api/v1/academies/:academyId/like
      */
     unlikeAcademy(req, academyId) {
-        return this.academies.unlikeAcademy(req.user.sub, academyId);
+        return this.academies.unlikeAcademy(req.user.id, academyId);
     }
     /**
      * Check whether the authenticated user
@@ -181,7 +225,7 @@ let AcademiesController = class AcademiesController {
      * GET /api/v1/academies/:academyId/is-liked
      */
     isAcademyLiked(req, academyId) {
-        return this.academies.isAcademyLiked(req.user.sub, academyId);
+        return this.academies.isAcademyLiked(req.user.id, academyId);
     }
     /**
      * Get academy like count.
@@ -237,6 +281,23 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AcademiesController.prototype, "deleteAcademy", null);
 __decorate([
+    UseGuards(JwtAuthGuard),
+    Get(':academyId/statistics'),
+    __param(0, Param('academyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AcademiesController.prototype, "getAcademyStatistics", null);
+__decorate([
+    UseGuards(JwtAuthGuard),
+    Post(':academyId/verification/request'),
+    __param(0, Req()),
+    __param(1, Param('academyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], AcademiesController.prototype, "requestVerification", null);
+__decorate([
     Get(':academyId/players'),
     __param(0, Param('academyId')),
     __metadata("design:type", Function),
@@ -263,6 +324,34 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", void 0)
 ], AcademiesController.prototype, "removeAcademyPlayer", null);
+__decorate([
+    UseGuards(JwtAuthGuard),
+    Post('teams/:teamId/players'),
+    __param(0, Req()),
+    __param(1, Param('teamId')),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, AddTeamPlayerDto]),
+    __metadata("design:returntype", void 0)
+], AcademiesController.prototype, "addTeamPlayer", null);
+__decorate([
+    UseGuards(JwtAuthGuard),
+    Get('teams/:teamId/players'),
+    __param(0, Param('teamId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AcademiesController.prototype, "getTeamPlayers", null);
+__decorate([
+    UseGuards(JwtAuthGuard),
+    Delete('teams/:teamId/players/:playerId'),
+    __param(0, Req()),
+    __param(1, Param('teamId')),
+    __param(2, Param('playerId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", void 0)
+], AcademiesController.prototype, "removeTeamPlayer", null);
 __decorate([
     Get(':academyId/coaches'),
     __param(0, Param('academyId')),

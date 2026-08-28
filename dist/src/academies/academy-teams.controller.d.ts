@@ -20,10 +20,10 @@ export declare class AcademyTeamsController {
         message: string;
         data: {
             id: string;
-            name: string;
             createdAt: Date;
-            description: string | null;
             updatedAt: Date;
+            name: string;
+            description: string | null;
             academyId: string;
             ageGroup: string | null;
             category: string | null;
@@ -44,10 +44,10 @@ export declare class AcademyTeamsController {
             };
         } & {
             id: string;
-            name: string;
             createdAt: Date;
-            description: string | null;
             updatedAt: Date;
+            name: string;
+            description: string | null;
             academyId: string;
             ageGroup: string | null;
             category: string | null;
@@ -68,34 +68,32 @@ export declare class AcademyTeamsController {
                 playerId: string;
                 player: {
                     id: string;
-                    fullName: string;
                     profilePicture: string | null;
+                    fullName: string;
                     nationality: string | null;
                     country: string | null;
                     state: string | null;
                     city: string | null;
+                    currentClub: string | null;
+                    currentAcademyName: string | null;
                     height: number | null;
                     weight: number | null;
                     preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                     primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                     secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                     jerseyNumber: number | null;
-                    currentClub: string | null;
-                    currentAcademyName: string | null;
                 };
                 joinedAt: Date;
                 leftAt: Date | null;
             }[];
             coaches: {
                 id: string;
-                role: string | null;
-                joinedAt: Date;
-                leftAt: Date | null;
                 coachId: string;
+                role: string | null;
                 coach: {
                     id: string;
-                    fullName: string;
                     profilePicture: string | null;
+                    fullName: string;
                     country: string | null;
                     state: string | null;
                     city: string | null;
@@ -105,13 +103,15 @@ export declare class AcademyTeamsController {
                     coachingCertification: string | null;
                     yearsOfExperience: number | null;
                 };
+                joinedAt: Date;
+                leftAt: Date | null;
             }[];
         } & {
             id: string;
-            name: string;
             createdAt: Date;
-            description: string | null;
             updatedAt: Date;
+            name: string;
+            description: string | null;
             academyId: string;
             ageGroup: string | null;
             category: string | null;
@@ -125,10 +125,10 @@ export declare class AcademyTeamsController {
         message: string;
         data: {
             id: string;
-            name: string;
             createdAt: Date;
-            description: string | null;
             updatedAt: Date;
+            name: string;
+            description: string | null;
             academyId: string;
             ageGroup: string | null;
             category: string | null;
@@ -151,8 +151,8 @@ export declare class AcademyTeamsController {
         data: {
             player: {
                 id: string;
-                fullName: string;
                 profilePicture: string | null;
+                fullName: string;
                 preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                 primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                 secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
@@ -160,9 +160,9 @@ export declare class AcademyTeamsController {
             };
         } & {
             id: string;
+            jerseyNumber: number | null;
             createdAt: Date;
             updatedAt: Date;
-            jerseyNumber: number | null;
             playerId: string;
             joinedAt: Date;
             leftAt: Date | null;
@@ -186,8 +186,8 @@ export declare class AcademyTeamsController {
         data: {
             coach: {
                 id: string;
-                fullName: string;
                 profilePicture: string | null;
+                fullName: string;
                 currentAcademyClub: string | null;
                 coachingRole: string | null;
                 yearsOfExperience: number | null;
@@ -195,11 +195,11 @@ export declare class AcademyTeamsController {
         } & {
             id: string;
             createdAt: Date;
-            role: string | null;
             updatedAt: Date;
+            coachId: string;
+            role: string | null;
             joinedAt: Date;
             leftAt: Date | null;
-            coachId: string;
             teamId: string;
         };
     }>;

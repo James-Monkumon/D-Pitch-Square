@@ -1,9 +1,15 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
+import {
+  AchievementOwnerType,
+  AchievementType,
+} from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -69,14 +75,52 @@ export class PlayersService {
     return player;
   }
 
+  /**
+   * Achievement types allowed for player profiles.
+   */
+  private readonly allowedPlayerAchievementTypes:
+    AchievementType[] = [
+      AchievementType.AWARD,
+      AchievementType.CHAMPIONSHIP,
+      AchievementType.CERTIFICATION,
+      AchievementType.MILESTONE,
+      AchievementType.INTERNATIONAL_EXPERIENCE,
+      AchievementType.NATIONAL_ACHIEVEMENT,
+      AchievementType.STATE_ACHIEVEMENT,
+      AchievementType.DISTRICT_ACHIEVEMENT,
+      AchievementType.OTHER,
+      AchievementType.PLAYER_AWARD,
+      AchievementType.TEAM_TITLE,
+      AchievementType.PERFORMANCE_MILESTONE,
+    ];
+
+  /**
+   * Validate that an achievement type
+   * is allowed for player profiles.
+   */
+  private validatePlayerAchievementType(
+    type: AchievementType,
+  ) {
+    if (
+      !this.allowedPlayerAchievementTypes.includes(
+        type,
+      )
+    ) {
+      throw new BadRequestException(
+        'This achievement type is not allowed for player profiles',
+      );
+    }
+  }
+
   // =========================================================
   // PLAYER PROFILE
   // =========================================================
 
   /**
-   * Create player profile.
+   * Create or restore player profile.
    *
-   * Only users with PLAYER role may create one.
+   * If a soft-deleted profile already exists,
+   * restore the same profile row and ID.
    */
   async createProfile(
     userId: string,
@@ -87,6 +131,7 @@ export class PlayersService {
         where: {
           id: userId,
         },
+
         include: {
           roles: {
             include: {
@@ -121,12 +166,110 @@ export class PlayersService {
         },
       });
 
-    if (existingProfile) {
+    /**
+     * Active profile already exists.
+     */
+    if (
+      existingProfile &&
+      existingProfile.deletedAt === null
+    ) {
       throw new ConflictException(
         'Player profile already exists',
       );
     }
 
+    /**
+     * Restore soft-deleted profile.
+     */
+    if (
+      existingProfile &&
+      existingProfile.deletedAt !== null
+    ) {
+      const restored =
+        await this.prisma.playerProfile.update({
+          where: {
+            id: existingProfile.id,
+          },
+
+          data: {
+            fullName:
+              dto.fullName,
+
+            profilePicture:
+              dto.profilePicture,
+
+            coverPhoto:
+              dto.coverPhoto,
+
+            dateOfBirth:
+              dto.dateOfBirth
+                ? new Date(dto.dateOfBirth)
+                : null,
+
+            nationality:
+              dto.nationality,
+
+            country:
+              dto.country,
+
+            state:
+              dto.state,
+
+            city:
+              dto.city,
+
+            address:
+              dto.address,
+
+            currentClub:
+              dto.currentClub,
+
+            currentAcademyName:
+              dto.currentAcademyName,
+
+            height:
+              dto.height,
+
+            weight:
+              dto.weight,
+
+            preferredFoot:
+              dto.preferredFoot,
+
+            primaryPosition:
+              dto.primaryPosition,
+
+            secondaryPosition:
+              dto.secondaryPosition,
+
+            jerseyNumber:
+              dto.jerseyNumber,
+
+            biography:
+              dto.biography,
+
+            contactInformation:
+              dto.contactInformation,
+
+            socialMediaLinks:
+              dto.socialMediaLinks,
+
+            deletedAt:
+              null,
+          },
+        });
+
+      return {
+        success: true,
+        message:
+          'Player profile restored successfully',
+        data: restored,
+      };
+    }
+
+    /**
+     * Create a new player profile.
+     */
     const player =
       await this.prisma.playerProfile.create({
         data: {
@@ -218,12 +361,19 @@ export class PlayersService {
 
         include: {
           achievements: {
+            where: {
+              ownerType:
+                AchievementOwnerType.PLAYER,
+            },
+
             orderBy: {
-              createdAt: 'desc',
+              createdAt:
+                'desc',
             },
           },
 
-          statistics: true,
+          statistics:
+            true,
         },
       });
 
@@ -278,7 +428,9 @@ export class PlayersService {
           ...(dto.dateOfBirth !== undefined && {
             dateOfBirth:
               dto.dateOfBirth
-                ? new Date(dto.dateOfBirth)
+                ? new Date(
+                    dto.dateOfBirth,
+                  )
                 : null,
           }),
 
@@ -372,12 +524,42 @@ export class PlayersService {
     };
   }
 
+  /**
+   * Soft-delete my player profile.
+   */
+  async deleteProfile(
+    userId: string,
+  ) {
+    const player =
+      await this.verifyPlayerOwner(
+        userId,
+      );
+
+    await this.prisma.playerProfile.update({
+      where: {
+        id: player.id,
+      },
+
+      data: {
+        deletedAt:
+          new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message:
+        'Player profile deleted successfully',
+      data: null,
+    };
+  }
+
   // =========================================================
   // PLAYER STATISTICS
   // =========================================================
 
   /**
-   * Update player statistics.
+   * Create/update player statistics.
    */
   async updateStatistics(
     userId: string,
@@ -506,7 +688,7 @@ export class PlayersService {
   // =========================================================
 
   /**
-   * Create achievement.
+   * Create player achievement.
    */
   async createAchievement(
     userId: string,
@@ -517,11 +699,24 @@ export class PlayersService {
         userId,
       );
 
+    this.validatePlayerAchievementType(
+      dto.achievementType,
+    );
+
     const achievement =
-      await this.prisma.playerAchievement.create({
+      await this.prisma.achievement.create({
         data: {
+          ownerType:
+            AchievementOwnerType.PLAYER,
+
           playerId:
             player.id,
+
+          coachId:
+            null,
+
+          scoutId:
+            null,
 
           title:
             dto.title,
@@ -529,27 +724,75 @@ export class PlayersService {
           description:
             dto.description,
 
-          year:
-            dto.year,
+          achievementType:
+            dto.achievementType,
+
+          achievementDate:
+            dto.achievementDate
+              ? new Date(
+                  dto.achievementDate,
+                )
+              : null,
 
           organization:
             dto.organization,
 
-          imageUrl:
-            dto.imageUrl,
+          level:
+            dto.level,
+
+          role:
+            dto.role,
+
+          evidenceUrl:
+            dto.evidenceUrl,
         },
       });
 
     return {
       success: true,
       message:
-        'Achievement created successfully',
+        'Player achievement created successfully',
       data: achievement,
     };
   }
 
   /**
-   * Update achievement.
+   * Get all my player achievements.
+   */
+  async getMyAchievements(
+    userId: string,
+  ) {
+    const player =
+      await this.verifyPlayerOwner(
+        userId,
+      );
+
+    const achievements =
+      await this.prisma.achievement.findMany({
+        where: {
+          ownerType:
+            AchievementOwnerType.PLAYER,
+
+          playerId:
+            player.id,
+        },
+
+        orderBy: {
+          createdAt:
+            'desc',
+        },
+      });
+
+    return {
+      success: true,
+      message:
+        'Player achievements retrieved successfully',
+      data: achievements,
+    };
+  }
+
+  /**
+   * Update one of my player achievements.
    */
   async updateAchievement(
     userId: string,
@@ -562,23 +805,38 @@ export class PlayersService {
       );
 
     const achievement =
-      await this.prisma.playerAchievement.findFirst({
+      await this.prisma.achievement.findFirst({
         where: {
-          id: achievementId,
-          playerId: player.id,
+          id:
+            achievementId,
+
+          ownerType:
+            AchievementOwnerType.PLAYER,
+
+          playerId:
+            player.id,
         },
       });
 
     if (!achievement) {
       throw new NotFoundException(
-        'Achievement not found',
+        'Player achievement not found',
+      );
+    }
+
+    if (
+      dto.achievementType !== undefined
+    ) {
+      this.validatePlayerAchievementType(
+        dto.achievementType,
       );
     }
 
     const updated =
-      await this.prisma.playerAchievement.update({
+      await this.prisma.achievement.update({
         where: {
-          id: achievementId,
+          id:
+            achievementId,
         },
 
         data: {
@@ -592,9 +850,18 @@ export class PlayersService {
               dto.description,
           }),
 
-          ...(dto.year !== undefined && {
-            year:
-              dto.year,
+          ...(dto.achievementType !== undefined && {
+            achievementType:
+              dto.achievementType,
+          }),
+
+          ...(dto.achievementDate !== undefined && {
+            achievementDate:
+              dto.achievementDate
+                ? new Date(
+                    dto.achievementDate,
+                  )
+                : null,
           }),
 
           ...(dto.organization !== undefined && {
@@ -602,9 +869,19 @@ export class PlayersService {
               dto.organization,
           }),
 
-          ...(dto.imageUrl !== undefined && {
-            imageUrl:
-              dto.imageUrl,
+          ...(dto.level !== undefined && {
+            level:
+              dto.level,
+          }),
+
+          ...(dto.role !== undefined && {
+            role:
+              dto.role,
+          }),
+
+          ...(dto.evidenceUrl !== undefined && {
+            evidenceUrl:
+              dto.evidenceUrl,
           }),
         },
       });
@@ -612,13 +889,13 @@ export class PlayersService {
     return {
       success: true,
       message:
-        'Achievement updated successfully',
+        'Player achievement updated successfully',
       data: updated,
     };
   }
 
   /**
-   * Delete achievement.
+   * Delete one of my player achievements.
    */
   async deleteAchievement(
     userId: string,
@@ -630,29 +907,36 @@ export class PlayersService {
       );
 
     const achievement =
-      await this.prisma.playerAchievement.findFirst({
+      await this.prisma.achievement.findFirst({
         where: {
-          id: achievementId,
-          playerId: player.id,
+          id:
+            achievementId,
+
+          ownerType:
+            AchievementOwnerType.PLAYER,
+
+          playerId:
+            player.id,
         },
       });
 
     if (!achievement) {
       throw new NotFoundException(
-        'Achievement not found',
+        'Player achievement not found',
       );
     }
 
-    await this.prisma.playerAchievement.delete({
+    await this.prisma.achievement.delete({
       where: {
-        id: achievementId,
+        id:
+          achievementId,
       },
     });
 
     return {
       success: true,
       message:
-        'Achievement deleted successfully',
+        'Player achievement deleted successfully',
       data: null,
     };
   }
@@ -694,8 +978,10 @@ export class PlayersService {
         success: true,
         message:
           'Already following player',
+
         data: {
-          following: true,
+          following:
+            true,
         },
       };
     }
@@ -711,8 +997,10 @@ export class PlayersService {
       success: true,
       message:
         'Player followed successfully',
+
       data: {
-        following: true,
+        following:
+          true,
       },
     };
   }
@@ -728,10 +1016,35 @@ export class PlayersService {
       playerId,
     );
 
-    await this.prisma.playerFollower.deleteMany({
+    const existingFollow =
+      await this.prisma.playerFollower.findUnique({
+        where: {
+          playerId_userId: {
+            playerId,
+            userId,
+          },
+        },
+      });
+
+    if (!existingFollow) {
+      return {
+        success: true,
+        message:
+          'Player is not being followed',
+
+        data: {
+          following:
+            false,
+        },
+      };
+    }
+
+    await this.prisma.playerFollower.delete({
       where: {
-        playerId,
-        userId,
+        playerId_userId: {
+          playerId,
+          userId,
+        },
       },
     });
 
@@ -739,15 +1052,16 @@ export class PlayersService {
       success: true,
       message:
         'Player unfollowed successfully',
+
       data: {
-        following: false,
+        following:
+          false,
       },
     };
   }
 
   /**
-   * Check whether current user follows
-   * a player.
+   * Check follow status.
    */
   async isFollowingPlayer(
     userId: string,
@@ -771,6 +1085,7 @@ export class PlayersService {
       success: true,
       message:
         'Player follow status retrieved successfully',
+
       data: {
         following:
           !!follow,
@@ -779,7 +1094,7 @@ export class PlayersService {
   }
 
   /**
-   * Get total follower count.
+   * Get player follower count.
    */
   async getPlayerFollowerCount(
     playerId: string,
@@ -799,6 +1114,7 @@ export class PlayersService {
       success: true,
       message:
         'Player follower count retrieved successfully',
+
       data: {
         followers,
       },
@@ -842,8 +1158,10 @@ export class PlayersService {
         success: true,
         message:
           'Player already liked',
+
         data: {
-          liked: true,
+          liked:
+            true,
         },
       };
     }
@@ -859,8 +1177,10 @@ export class PlayersService {
       success: true,
       message:
         'Player liked successfully',
+
       data: {
-        liked: true,
+        liked:
+          true,
       },
     };
   }
@@ -876,10 +1196,35 @@ export class PlayersService {
       playerId,
     );
 
-    await this.prisma.playerLike.deleteMany({
+    const existingLike =
+      await this.prisma.playerLike.findUnique({
+        where: {
+          playerId_userId: {
+            playerId,
+            userId,
+          },
+        },
+      });
+
+    if (!existingLike) {
+      return {
+        success: true,
+        message:
+          'Player is not liked',
+
+        data: {
+          liked:
+            false,
+        },
+      };
+    }
+
+    await this.prisma.playerLike.delete({
       where: {
-        playerId,
-        userId,
+        playerId_userId: {
+          playerId,
+          userId,
+        },
       },
     });
 
@@ -887,14 +1232,16 @@ export class PlayersService {
       success: true,
       message:
         'Player unliked successfully',
+
       data: {
-        liked: false,
+        liked:
+          false,
       },
     };
   }
 
   /**
-   * Check whether authenticated user likes a player.
+   * Check player like status.
    */
   async isPlayerLiked(
     userId: string,
@@ -918,6 +1265,7 @@ export class PlayersService {
       success: true,
       message:
         'Player like status retrieved successfully',
+
       data: {
         liked:
           !!like,
@@ -926,7 +1274,7 @@ export class PlayersService {
   }
 
   /**
-   * Get total likes for a player.
+   * Get total player likes.
    */
   async getPlayerLikesCount(
     playerId: string,
@@ -946,6 +1294,7 @@ export class PlayersService {
       success: true,
       message:
         'Player likes count retrieved successfully',
+
       data: {
         count,
       },
@@ -958,9 +1307,6 @@ export class PlayersService {
 
   /**
    * Get public player profile.
-   *
-   * Includes achievements, statistics,
-   * follower total and like total.
    */
   async getPlayerById(
     playerId: string,
@@ -968,18 +1314,28 @@ export class PlayersService {
     const player =
       await this.prisma.playerProfile.findFirst({
         where: {
-          id: playerId,
-          deletedAt: null,
+          id:
+            playerId,
+
+          deletedAt:
+            null,
         },
 
         include: {
           achievements: {
+            where: {
+              ownerType:
+                AchievementOwnerType.PLAYER,
+            },
+
             orderBy: {
-              createdAt: 'desc',
+              createdAt:
+                'desc',
             },
           },
 
-          statistics: true,
+          statistics:
+            true,
         },
       });
 
@@ -1014,9 +1370,7 @@ export class PlayersService {
 
       data: {
         ...player,
-
         followers,
-
         likes,
       },
     };

@@ -27,11 +27,9 @@ let PlayersController = class PlayersController {
     // PLAYER PROFILE
     // =========================================================
     /**
-     * Create my player profile.
+     * Create or restore my player profile.
      *
      * POST /players/profile
-     *
-     * Requires authentication.
      */
     async createProfile(req, dto) {
         return this.playersService.createProfile(req.user.id, dto);
@@ -40,21 +38,14 @@ let PlayersController = class PlayersController {
      * Get my player profile.
      *
      * GET /players/profile
-     *
-     * Requires authentication.
      */
     async getMyProfile(req) {
         return this.playersService.getMyProfile(req.user.id);
     }
     /**
-     * Get my player profile.
+     * Explicit /me alias.
      *
      * GET /players/profile/me
-     *
-     * Requires authentication.
-     *
-     * This is an explicit /me alias for
-     * GET /players/profile.
      */
     async getMyProfileMe(req) {
         return this.playersService.getMyProfile(req.user.id);
@@ -63,23 +54,25 @@ let PlayersController = class PlayersController {
      * Update my player profile.
      *
      * PATCH /players/profile
-     *
-     * Requires authentication.
      */
     async updateProfile(req, dto) {
         return this.playersService.updateProfile(req.user.id, dto);
+    }
+    /**
+     * Soft-delete my player profile.
+     *
+     * DELETE /players/profile
+     */
+    async deleteProfile(req) {
+        return this.playersService.deleteProfile(req.user.id);
     }
     // =========================================================
     // PLAYER STATISTICS
     // =========================================================
     /**
-     * Update my player statistics.
-     *
-     * Creates statistics if they don't already exist.
+     * Create/update player statistics.
      *
      * PATCH /players/statistics
-     *
-     * Requires authentication.
      */
     async updateStatistics(req, dto) {
         return this.playersService.updateStatistics(req.user.id, dto);
@@ -88,21 +81,25 @@ let PlayersController = class PlayersController {
     // PLAYER ACHIEVEMENTS
     // =========================================================
     /**
-     * Create an achievement for my profile.
+     * Create player achievement.
      *
      * POST /players/achievements
-     *
-     * Requires authentication.
      */
     async createAchievement(req, dto) {
         return this.playersService.createAchievement(req.user.id, dto);
     }
     /**
+     * Get all my achievements.
+     *
+     * GET /players/achievements
+     */
+    async getMyAchievements(req) {
+        return this.playersService.getMyAchievements(req.user.id);
+    }
+    /**
      * Update one of my achievements.
      *
      * PATCH /players/achievements/:achievementId
-     *
-     * Requires authentication.
      */
     async updateAchievement(req, achievementId, dto) {
         return this.playersService.updateAchievement(req.user.id, achievementId, dto);
@@ -111,8 +108,6 @@ let PlayersController = class PlayersController {
      * Delete one of my achievements.
      *
      * DELETE /players/achievements/:achievementId
-     *
-     * Requires authentication.
      */
     async deleteAchievement(req, achievementId) {
         return this.playersService.deleteAchievement(req.user.id, achievementId);
@@ -121,42 +116,33 @@ let PlayersController = class PlayersController {
     // PLAYER FOLLOW
     // =========================================================
     /**
-     * Follow a player.
+     * Follow player.
      *
      * POST /players/:playerId/follow
-     *
-     * Requires authentication.
      */
     async followPlayer(req, playerId) {
         return this.playersService.followPlayer(req.user.id, playerId);
     }
     /**
-     * Unfollow a player.
+     * Unfollow player.
      *
      * DELETE /players/:playerId/follow
-     *
-     * Requires authentication.
      */
     async unfollowPlayer(req, playerId) {
         return this.playersService.unfollowPlayer(req.user.id, playerId);
     }
     /**
-     * Check whether the authenticated user
-     * follows a player.
+     * Check follow status.
      *
      * GET /players/:playerId/follow
-     *
-     * Requires authentication.
      */
     async isFollowingPlayer(req, playerId) {
         return this.playersService.isFollowingPlayer(req.user.id, playerId);
     }
     /**
-     * Get follower count for a player.
+     * Get follower count.
      *
      * GET /players/:playerId/followers/count
-     *
-     * Public endpoint.
      */
     async getPlayerFollowerCount(playerId) {
         return this.playersService.getPlayerFollowerCount(playerId);
@@ -165,42 +151,33 @@ let PlayersController = class PlayersController {
     // PLAYER LIKE
     // =========================================================
     /**
-     * Like a player.
+     * Like player.
      *
      * POST /players/:playerId/like
-     *
-     * Requires authentication.
      */
     async likePlayer(req, playerId) {
         return this.playersService.likePlayer(req.user.id, playerId);
     }
     /**
-     * Unlike a player.
+     * Unlike player.
      *
      * DELETE /players/:playerId/like
-     *
-     * Requires authentication.
      */
     async unlikePlayer(req, playerId) {
         return this.playersService.unlikePlayer(req.user.id, playerId);
     }
     /**
-     * Check whether the authenticated user
-     * likes a player.
+     * Check like status.
      *
      * GET /players/:playerId/like
-     *
-     * Requires authentication.
      */
     async isPlayerLiked(req, playerId) {
         return this.playersService.isPlayerLiked(req.user.id, playerId);
     }
     /**
-     * Get total likes for a player.
+     * Get total player likes.
      *
      * GET /players/:playerId/likes/count
-     *
-     * Public endpoint.
      */
     async getPlayerLikesCount(playerId) {
         return this.playersService.getPlayerLikesCount(playerId);
@@ -209,14 +186,12 @@ let PlayersController = class PlayersController {
     // PUBLIC PLAYER PROFILE
     // =========================================================
     /**
-     * Get a public player profile.
+     * Get public player profile.
+     *
+     * Keep this generic parameter route
+     * at the bottom of the controller.
      *
      * GET /players/:playerId
-     *
-     * Does not require authentication.
-     *
-     * Example:
-     * GET /players/dc210453-08fd-43e5-a644-a75f8ae07c15
      */
     async getPlayerById(playerId) {
         return this.playersService.getPlayerById(playerId);
@@ -257,6 +232,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "updateProfile", null);
 __decorate([
+    Delete('profile'),
+    UseGuards(JwtAuthGuard),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PlayersController.prototype, "deleteProfile", null);
+__decorate([
     Patch('statistics'),
     UseGuards(JwtAuthGuard),
     __param(0, Req()),
@@ -274,6 +257,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, CreateAchievementDto]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "createAchievement", null);
+__decorate([
+    Get('achievements'),
+    UseGuards(JwtAuthGuard),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PlayersController.prototype, "getMyAchievements", null);
 __decorate([
     Patch('achievements/:achievementId'),
     UseGuards(JwtAuthGuard),

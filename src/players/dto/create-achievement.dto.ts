@@ -1,11 +1,12 @@
 import {
-  IsInt,
+  IsDateString,
+  IsEnum,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
-  Min,
 } from 'class-validator';
+
+import { AchievementType } from '@prisma/client';
 
 export class CreateAchievementDto {
   @IsString()
@@ -16,19 +17,29 @@ export class CreateAchievementDto {
   @IsString()
   description?: string;
 
+  @IsEnum(AchievementType)
+  achievementType!: AchievementType;
+
   @IsOptional()
-  @IsInt()
-  @Min(1900)
-  @Max(2100)
-  year?: number;
+  @IsDateString()
+  achievementDate?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(150)
+  @MaxLength(200)
   organization?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
-  imageUrl?: string;
+  @MaxLength(100)
+  level?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  evidenceUrl?: string;
 }

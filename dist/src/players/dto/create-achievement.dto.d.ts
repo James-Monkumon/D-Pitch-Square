@@ -1,7 +1,11 @@
+import { AchievementType } from '@prisma/client';
 export declare class CreateAchievementDto {
     title: string;
     description?: string;
-    year?: number;
+    achievementType: AchievementType;
+    achievementDate?: string;
     organization?: string;
-    imageUrl?: string;
+    level?: string;
+    role?: string;
+    evidenceUrl?: string;
 }

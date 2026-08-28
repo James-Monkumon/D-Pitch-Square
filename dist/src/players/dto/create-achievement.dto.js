@@ -7,13 +7,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min, } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString, MaxLength, } from 'class-validator';
+import { AchievementType } from '@prisma/client';
 export class CreateAchievementDto {
     title;
     description;
-    year;
+    achievementType;
+    achievementDate;
     organization;
-    imageUrl;
+    level;
+    role;
+    evidenceUrl;
 }
 __decorate([
     IsString(),
@@ -26,22 +30,35 @@ __decorate([
     __metadata("design:type", String)
 ], CreateAchievementDto.prototype, "description", void 0);
 __decorate([
+    IsEnum(AchievementType),
+    __metadata("design:type", String)
+], CreateAchievementDto.prototype, "achievementType", void 0);
+__decorate([
     IsOptional(),
-    IsInt(),
-    Min(1900),
-    Max(2100),
-    __metadata("design:type", Number)
-], CreateAchievementDto.prototype, "year", void 0);
+    IsDateString(),
+    __metadata("design:type", String)
+], CreateAchievementDto.prototype, "achievementDate", void 0);
 __decorate([
     IsOptional(),
     IsString(),
-    MaxLength(150),
+    MaxLength(200),
     __metadata("design:type", String)
 ], CreateAchievementDto.prototype, "organization", void 0);
 __decorate([
     IsOptional(),
     IsString(),
-    MaxLength(500),
+    MaxLength(100),
     __metadata("design:type", String)
-], CreateAchievementDto.prototype, "imageUrl", void 0);
+], CreateAchievementDto.prototype, "level", void 0);
+__decorate([
+    IsOptional(),
+    IsString(),
+    MaxLength(150),
+    __metadata("design:type", String)
+], CreateAchievementDto.prototype, "role", void 0);
+__decorate([
+    IsOptional(),
+    IsString(),
+    __metadata("design:type", String)
+], CreateAchievementDto.prototype, "evidenceUrl", void 0);
 //# sourceMappingURL=create-achievement.dto.js.map

@@ -54,6 +54,52 @@ enum AcademyMediaType {
   DOCUMENT
 }
 
+enum AchievementOwnerType {
+  PLAYER
+  COACH
+  SCOUT
+}
+
+enum AchievementVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum AchievementType {
+  // General
+  AWARD
+  CHAMPIONSHIP
+  CERTIFICATION
+  MILESTONE
+  INTERNATIONAL_EXPERIENCE
+  NATIONAL_ACHIEVEMENT
+  STATE_ACHIEVEMENT
+  DISTRICT_ACHIEVEMENT
+  OTHER
+
+  // Player
+  PLAYER_AWARD
+  TEAM_TITLE
+  PERFORMANCE_MILESTONE
+
+  // Coach
+  COACH_OF_THE_YEAR
+  TEAM_PROMOTION
+  PLAYERS_DEVELOPED
+  COACHING_LICENSE
+  ACADEMY_MILESTONE
+
+  // Scout
+  PLAYER_DISCOVERED
+  PLAYER_SIGNED
+  PLAYER_PROMOTED
+  TOURNAMENT_SCOUTED
+  SCOUTING_CERTIFICATION
+  TALENT_DISCOVERY
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @unique @db.VarChar(320)
@@ -214,14 +260,17 @@ model PlayerProfile {
 
   socialMediaLinks Json? @map("social_media_links")
 
+  verificationStatus VerificationStatus @default(NOT_REQUESTED) @map("verification_status")
+
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  statistics   PlayerStatistics?
-  achievements PlayerAchievement[]
+  statistics PlayerStatistics?
+
+  achievements Achievement[]
 
   academyMemberships AcademyPlayerMembership[]
   teamMemberships    AcademyTeamPlayer[]
@@ -238,6 +287,7 @@ model PlayerProfile {
   @@index([dateOfBirth])
   @@index([currentAcademyName])
   @@index([height])
+  @@index([verificationStatus])
   @@map("player_profiles")
 }
 
@@ -298,23 +348,48 @@ model PlayerStatistics {
   @@map("player_statistics")
 }
 
-model PlayerAchievement {
-  id       String @id @default(uuid()) @db.Uuid
-  playerId String @map("player_id") @db.Uuid
+model Achievement {
+  id String @id @default(uuid()) @db.Uuid
 
-  title        String  @db.VarChar(200)
-  description  String? @db.Text
-  year         Int?
-  organization String? @db.VarChar(150)
-  imageUrl     String? @map("image_url")
+  ownerType AchievementOwnerType @map("owner_type")
+
+  playerId String? @map("player_id") @db.Uuid
+  coachId  String? @map("coach_id") @db.Uuid
+  scoutId  String? @map("scout_id") @db.Uuid
+
+  title       String  @db.VarChar(200)
+  description String? @db.Text
+
+  achievementType AchievementType @map("achievement_type")
+
+  achievementDate DateTime? @map("achievement_date")
+
+  organization String? @db.VarChar(200)
+
+  level String? @db.VarChar(100)
+
+  role String? @db.VarChar(150)
+
+  evidenceUrl String? @map("evidence_url") @db.Text
+
+  verificationStatus AchievementVerificationStatus @default(UNVERIFIED) @map("verification_status")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  player PlayerProfile? @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  coach CoachProfile? @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  scout ScoutProfile? @relation(fields: [scoutId], references: [id], onDelete: Cascade)
 
   @@index([playerId])
-  @@map("player_achievements")
+  @@index([coachId])
+  @@index([scoutId])
+  @@index([ownerType])
+  @@index([achievementType])
+  @@index([verificationStatus])
+  @@map("achievements")
 }
 
 model AcademyProfile {
@@ -575,6 +650,8 @@ model ScoutProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  achievements Achievement[]
+
   followers ScoutFollower[]
   likes     ScoutLike[]
 
@@ -655,6 +732,8 @@ model CoachProfile {
 
   academyMemberships AcademyCoachMembership[]
   teamMemberships    AcademyTeamCoach[]
+
+  achievements Achievement[]
 
   followers CoachFollower[]
   likes     CoachLike[]

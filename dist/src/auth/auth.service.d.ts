@@ -54,7 +54,7 @@ export declare class AuthService {
             user: {
                 id: string;
                 email: string;
-                status: "ACTIVE" | "PENDING";
+                status: "PENDING" | "ACTIVE";
                 roles: string[];
             };
         };

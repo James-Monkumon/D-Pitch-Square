@@ -7,7 +7,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, } from '@nestjs/common';
+import { AchievementOwnerType, AchievementType, } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 let PlayersService = class PlayersService {
     prisma;
@@ -47,13 +48,40 @@ let PlayersService = class PlayersService {
         }
         return player;
     }
+    /**
+     * Achievement types allowed for player profiles.
+     */
+    allowedPlayerAchievementTypes = [
+        AchievementType.AWARD,
+        AchievementType.CHAMPIONSHIP,
+        AchievementType.CERTIFICATION,
+        AchievementType.MILESTONE,
+        AchievementType.INTERNATIONAL_EXPERIENCE,
+        AchievementType.NATIONAL_ACHIEVEMENT,
+        AchievementType.STATE_ACHIEVEMENT,
+        AchievementType.DISTRICT_ACHIEVEMENT,
+        AchievementType.OTHER,
+        AchievementType.PLAYER_AWARD,
+        AchievementType.TEAM_TITLE,
+        AchievementType.PERFORMANCE_MILESTONE,
+    ];
+    /**
+     * Validate that an achievement type
+     * is allowed for player profiles.
+     */
+    validatePlayerAchievementType(type) {
+        if (!this.allowedPlayerAchievementTypes.includes(type)) {
+            throw new BadRequestException('This achievement type is not allowed for player profiles');
+        }
+    }
     // =========================================================
     // PLAYER PROFILE
     // =========================================================
     /**
-     * Create player profile.
+     * Create or restore player profile.
      *
-     * Only users with PLAYER role may create one.
+     * If a soft-deleted profile already exists,
+     * restore the same profile row and ID.
      */
     async createProfile(userId, dto) {
         const user = await this.prisma.user.findUnique({
@@ -80,9 +108,57 @@ let PlayersService = class PlayersService {
                 userId,
             },
         });
-        if (existingProfile) {
+        /**
+         * Active profile already exists.
+         */
+        if (existingProfile &&
+            existingProfile.deletedAt === null) {
             throw new ConflictException('Player profile already exists');
         }
+        /**
+         * Restore soft-deleted profile.
+         */
+        if (existingProfile &&
+            existingProfile.deletedAt !== null) {
+            const restored = await this.prisma.playerProfile.update({
+                where: {
+                    id: existingProfile.id,
+                },
+                data: {
+                    fullName: dto.fullName,
+                    profilePicture: dto.profilePicture,
+                    coverPhoto: dto.coverPhoto,
+                    dateOfBirth: dto.dateOfBirth
+                        ? new Date(dto.dateOfBirth)
+                        : null,
+                    nationality: dto.nationality,
+                    country: dto.country,
+                    state: dto.state,
+                    city: dto.city,
+                    address: dto.address,
+                    currentClub: dto.currentClub,
+                    currentAcademyName: dto.currentAcademyName,
+                    height: dto.height,
+                    weight: dto.weight,
+                    preferredFoot: dto.preferredFoot,
+                    primaryPosition: dto.primaryPosition,
+                    secondaryPosition: dto.secondaryPosition,
+                    jerseyNumber: dto.jerseyNumber,
+                    biography: dto.biography,
+                    contactInformation: dto.contactInformation,
+                    socialMediaLinks: dto.socialMediaLinks,
+                    deletedAt: null,
+                },
+            });
+            return {
+                success: true,
+                message: 'Player profile restored successfully',
+                data: restored,
+            };
+        }
+        /**
+         * Create a new player profile.
+         */
         const player = await this.prisma.playerProfile.create({
             data: {
                 userId,
@@ -126,6 +202,9 @@ let PlayersService = class PlayersService {
             },
             include: {
                 achievements: {
+                    where: {
+                        ownerType: AchievementOwnerType.PLAYER,
+                    },
                     orderBy: {
                         createdAt: 'desc',
                     },
@@ -222,11 +301,30 @@ let PlayersService = class PlayersService {
             data: updated,
         };
     }
+    /**
+     * Soft-delete my player profile.
+     */
+    async deleteProfile(userId) {
+        const player = await this.verifyPlayerOwner(userId);
+        await this.prisma.playerProfile.update({
+            where: {
+                id: player.id,
+            },
+            data: {
+                deletedAt: new Date(),
+            },
+        });
+        return {
+            success: true,
+            message: 'Player profile deleted successfully',
+            data: null,
+        };
+    }
     // =========================================================
     // PLAYER STATISTICS
     // =========================================================
     /**
-     * Update player statistics.
+     * Create/update player statistics.
      */
     async updateStatistics(userId, dto) {
         const player = await this.verifyPlayerOwner(userId);
@@ -304,41 +402,74 @@ let PlayersService = class PlayersService {
     // PLAYER ACHIEVEMENTS
     // =========================================================
     /**
-     * Create achievement.
+     * Create player achievement.
      */
     async createAchievement(userId, dto) {
         const player = await this.verifyPlayerOwner(userId);
-        const achievement = await this.prisma.playerAchievement.create({
+        this.validatePlayerAchievementType(dto.achievementType);
+        const achievement = await this.prisma.achievement.create({
             data: {
+                ownerType: AchievementOwnerType.PLAYER,
                 playerId: player.id,
+                coachId: null,
+                scoutId: null,
                 title: dto.title,
                 description: dto.description,
-                year: dto.year,
+                achievementType: dto.achievementType,
+                achievementDate: dto.achievementDate
+                    ? new Date(dto.achievementDate)
+                    : null,
                 organization: dto.organization,
-                imageUrl: dto.imageUrl,
+                level: dto.level,
+                role: dto.role,
+                evidenceUrl: dto.evidenceUrl,
             },
         });
         return {
             success: true,
-            message: 'Achievement created successfully',
+            message: 'Player achievement created successfully',
             data: achievement,
         };
     }
     /**
-     * Update achievement.
+     * Get all my player achievements.
+     */
+    async getMyAchievements(userId) {
+        const player = await this.verifyPlayerOwner(userId);
+        const achievements = await this.prisma.achievement.findMany({
+            where: {
+                ownerType: AchievementOwnerType.PLAYER,
+                playerId: player.id,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+        return {
+            success: true,
+            message: 'Player achievements retrieved successfully',
+            data: achievements,
+        };
+    }
+    /**
+     * Update one of my player achievements.
      */
     async updateAchievement(userId, achievementId, dto) {
         const player = await this.verifyPlayerOwner(userId);
-        const achievement = await this.prisma.playerAchievement.findFirst({
+        const achievement = await this.prisma.achievement.findFirst({
             where: {
                 id: achievementId,
+                ownerType: AchievementOwnerType.PLAYER,
                 playerId: player.id,
             },
         });
         if (!achievement) {
-            throw new NotFoundException('Achievement not found');
+            throw new NotFoundException('Player achievement not found');
         }
-        const updated = await this.prisma.playerAchievement.update({
+        if (dto.achievementType !== undefined) {
+            this.validatePlayerAchievementType(dto.achievementType);
+        }
+        const updated = await this.prisma.achievement.update({
             where: {
                 id: achievementId,
             },
@@ -349,45 +480,57 @@ let PlayersService = class PlayersService {
                 ...(dto.description !== undefined && {
                     description: dto.description,
                 }),
-                ...(dto.year !== undefined && {
-                    year: dto.year,
+                ...(dto.achievementType !== undefined && {
+                    achievementType: dto.achievementType,
+                }),
+                ...(dto.achievementDate !== undefined && {
+                    achievementDate: dto.achievementDate
+                        ? new Date(dto.achievementDate)
+                        : null,
                 }),
                 ...(dto.organization !== undefined && {
                     organization: dto.organization,
                 }),
-                ...(dto.imageUrl !== undefined && {
-                    imageUrl: dto.imageUrl,
+                ...(dto.level !== undefined && {
+                    level: dto.level,
+                }),
+                ...(dto.role !== undefined && {
+                    role: dto.role,
+                }),
+                ...(dto.evidenceUrl !== undefined && {
+                    evidenceUrl: dto.evidenceUrl,
                 }),
             },
         });
         return {
             success: true,
-            message: 'Achievement updated successfully',
+            message: 'Player achievement updated successfully',
             data: updated,
         };
     }
     /**
-     * Delete achievement.
+     * Delete one of my player achievements.
      */
     async deleteAchievement(userId, achievementId) {
         const player = await this.verifyPlayerOwner(userId);
-        const achievement = await this.prisma.playerAchievement.findFirst({
+        const achievement = await this.prisma.achievement.findFirst({
             where: {
                 id: achievementId,
+                ownerType: AchievementOwnerType.PLAYER,
                 playerId: player.id,
             },
         });
         if (!achievement) {
-            throw new NotFoundException('Achievement not found');
+            throw new NotFoundException('Player achievement not found');
         }
-        await this.prisma.playerAchievement.delete({
+        await this.prisma.achievement.delete({
             where: {
                 id: achievementId,
             },
         });
         return {
             success: true,
-            message: 'Achievement deleted successfully',
+            message: 'Player achievement deleted successfully',
             data: null,
         };
     }
@@ -438,10 +581,29 @@ let PlayersService = class PlayersService {
      */
     async unfollowPlayer(userId, playerId) {
         await this.findActivePlayer(playerId);
-        await this.prisma.playerFollower.deleteMany({
+        const existingFollow = await this.prisma.playerFollower.findUnique({
             where: {
-                playerId,
-                userId,
+                playerId_userId: {
+                    playerId,
+                    userId,
+                },
+            },
+        });
+        if (!existingFollow) {
+            return {
+                success: true,
+                message: 'Player is not being followed',
+                data: {
+                    following: false,
+                },
+            };
+        }
+        await this.prisma.playerFollower.delete({
+            where: {
+                playerId_userId: {
+                    playerId,
+                    userId,
+                },
             },
         });
         return {
@@ -453,8 +615,7 @@ let PlayersService = class PlayersService {
         };
     }
     /**
-     * Check whether current user follows
-     * a player.
+     * Check follow status.
      */
     async isFollowingPlayer(userId, playerId) {
         await this.findActivePlayer(playerId);
@@ -475,7 +636,7 @@ let PlayersService = class PlayersService {
         };
     }
     /**
-     * Get total follower count.
+     * Get player follower count.
      */
     async getPlayerFollowerCount(playerId) {
         await this.findActivePlayer(playerId);
@@ -539,10 +700,29 @@ let PlayersService = class PlayersService {
      */
     async unlikePlayer(userId, playerId) {
         await this.findActivePlayer(playerId);
-        await this.prisma.playerLike.deleteMany({
+        const existingLike = await this.prisma.playerLike.findUnique({
             where: {
-                playerId,
-                userId,
+                playerId_userId: {
+                    playerId,
+                    userId,
+                },
+            },
+        });
+        if (!existingLike) {
+            return {
+                success: true,
+                message: 'Player is not liked',
+                data: {
+                    liked: false,
+                },
+            };
+        }
+        await this.prisma.playerLike.delete({
+            where: {
+                playerId_userId: {
+                    playerId,
+                    userId,
+                },
             },
         });
         return {
@@ -554,7 +734,7 @@ let PlayersService = class PlayersService {
         };
     }
     /**
-     * Check whether authenticated user likes a player.
+     * Check player like status.
      */
     async isPlayerLiked(userId, playerId) {
         await this.findActivePlayer(playerId);
@@ -575,7 +755,7 @@ let PlayersService = class PlayersService {
         };
     }
     /**
-     * Get total likes for a player.
+     * Get total player likes.
      */
     async getPlayerLikesCount(playerId) {
         await this.findActivePlayer(playerId);
@@ -597,9 +777,6 @@ let PlayersService = class PlayersService {
     // =========================================================
     /**
      * Get public player profile.
-     *
-     * Includes achievements, statistics,
-     * follower total and like total.
      */
     async getPlayerById(playerId) {
         const player = await this.prisma.playerProfile.findFirst({
@@ -609,6 +786,9 @@ let PlayersService = class PlayersService {
             },
             include: {
                 achievements: {
+                    where: {
+                        ownerType: AchievementOwnerType.PLAYER,
+                    },
                     orderBy: {
                         createdAt: 'desc',
                     },

@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { AcademyQueryDto } from './dto/academy-query.dto.js';
 import { AddAcademyCoachDto } from './dto/add-academy-coach.dto.js';
 import { AddAcademyPlayerDto } from './dto/add-academy-player.dto.js';
+import { AddTeamPlayerDto } from './dto/add-team-player.dto.js';
 import { CreateAcademyDto } from './dto/create-academy.dto.js';
 import { UpdateAcademyDto } from './dto/update-academy.dto.js';
 export declare class AcademiesService {
@@ -19,6 +20,9 @@ export declare class AcademiesService {
     /**
      * Create an academy profile.
      *
+     * If the user previously had an academy profile that was
+     * soft-deleted, that profile is restored and reused.
+     *
      * POST /api/v1/academies
      */
     createAcademy(userId: string, dto: CreateAcademyDto): Promise<{
@@ -26,16 +30,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            description: string | null;
             userId: string;
-            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+            createdAt: Date;
+            updatedAt: Date;
             deletedAt: Date | null;
+            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -43,7 +48,6 @@ export declare class AcademiesService {
             contactEmail: string | null;
             contactPhone: string | null;
             websiteUrl: string | null;
-            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
         };
     }>;
     /**
@@ -56,16 +60,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            description: string | null;
             userId: string;
-            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+            createdAt: Date;
+            updatedAt: Date;
             deletedAt: Date | null;
+            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -73,7 +78,6 @@ export declare class AcademiesService {
             contactEmail: string | null;
             contactPhone: string | null;
             websiteUrl: string | null;
-            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
         }[];
         pagination: {
             page: number;
@@ -94,16 +98,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            description: string | null;
             userId: string;
-            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+            createdAt: Date;
+            updatedAt: Date;
             deletedAt: Date | null;
+            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -111,7 +116,6 @@ export declare class AcademiesService {
             contactEmail: string | null;
             contactPhone: string | null;
             websiteUrl: string | null;
-            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
         };
     }>;
     /**
@@ -124,16 +128,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            description: string | null;
             userId: string;
-            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+            createdAt: Date;
+            updatedAt: Date;
             deletedAt: Date | null;
+            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -141,7 +146,6 @@ export declare class AcademiesService {
             contactEmail: string | null;
             contactPhone: string | null;
             websiteUrl: string | null;
-            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
         };
     }>;
     /**
@@ -168,20 +172,20 @@ export declare class AcademiesService {
             playerId: string;
             player: {
                 id: string;
-                fullName: string;
                 profilePicture: string | null;
+                fullName: string;
                 nationality: string | null;
                 country: string | null;
                 state: string | null;
                 city: string | null;
+                currentClub: string | null;
+                currentAcademyName: string | null;
                 height: number | null;
                 weight: number | null;
                 preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                 primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                 secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                 jerseyNumber: number | null;
-                currentClub: string | null;
-                currentAcademyName: string | null;
             };
             joinedAt: Date;
             leftAt: Date | null;
@@ -198,8 +202,8 @@ export declare class AcademiesService {
             playerId: string;
             player: {
                 id: string;
-                fullName: string;
                 profilePicture: string | null;
+                fullName: string;
                 preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                 primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                 secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
@@ -218,6 +222,92 @@ export declare class AcademiesService {
         data: null;
     }>;
     /**
+   * Get academy statistics.
+   *
+   * GET /api/v1/academies/:academyId/statistics
+   */
+    getAcademyStatistics(academyId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            totalPlayers: number;
+            totalCoaches: number;
+            totalTeams: number;
+            totalFollowers: number;
+        };
+    }>;
+    requestVerification(userId: string, academyId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+        };
+    }>;
+    /**
+     * Add a player to a team.
+     *
+     * POST /api/v1/academies/teams/:teamId/players
+     */
+    addTeamPlayer(userId: string, teamId: string, dto: AddTeamPlayerDto): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            jerseyNumber: number | null;
+            createdAt: Date;
+            updatedAt: Date;
+            playerId: string;
+            player: {
+                id: string;
+                profilePicture: string | null;
+                fullName: string;
+                preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
+                primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
+                secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
+            };
+            joinedAt: Date;
+            leftAt: Date | null;
+            teamId: string;
+        };
+    }>;
+    /**
+     * Get all active players assigned to a team.
+     *
+     * GET /api/v1/academies/teams/:teamId/players
+     */
+    getTeamPlayers(teamId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            jerseyNumber: number | null;
+            createdAt: Date;
+            updatedAt: Date;
+            playerId: string;
+            player: {
+                id: string;
+                profilePicture: string | null;
+                fullName: string;
+                preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
+                primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
+                secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
+            };
+            joinedAt: Date;
+            leftAt: Date | null;
+            teamId: string;
+        }[];
+    }>;
+    /**
+     * Remove a player from a team.
+     *
+     * DELETE /api/v1/academies/teams/:teamId/players/:playerId
+     */
+    removeTeamPlayer(userId: string, teamId: string, playerId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: null;
+    }>;
+    /**
      * Get all active coaches belonging
      * to an academy.
      */
@@ -226,14 +316,12 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
-            role: string | null;
-            joinedAt: Date;
-            leftAt: Date | null;
             coachId: string;
+            role: string | null;
             coach: {
                 id: string;
-                fullName: string;
                 profilePicture: string | null;
+                fullName: string;
                 country: string | null;
                 state: string | null;
                 city: string | null;
@@ -243,6 +331,8 @@ export declare class AcademiesService {
                 coachingCertification: string | null;
                 yearsOfExperience: number | null;
             };
+            joinedAt: Date;
+            leftAt: Date | null;
         }[];
     }>;
     /**
@@ -253,18 +343,18 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
-            role: string | null;
-            academyId: string;
-            joinedAt: Date;
-            leftAt: Date | null;
             coachId: string;
+            role: string | null;
             coach: {
                 id: string;
-                fullName: string;
                 profilePicture: string | null;
+                fullName: string;
                 coachingRole: string | null;
                 yearsOfExperience: number | null;
             };
+            academyId: string;
+            joinedAt: Date;
+            leftAt: Date | null;
         };
     }>;
     /**

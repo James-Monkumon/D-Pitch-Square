@@ -20,12 +20,15 @@ import { AcademiesService } from './academies.service.js';
 import { AcademyQueryDto } from './dto/academy-query.dto.js';
 import { AddAcademyCoachDto } from './dto/add-academy-coach.dto.js';
 import { AddAcademyPlayerDto } from './dto/add-academy-player.dto.js';
+import { AddTeamPlayerDto } from './dto/add-team-player.dto.js';
 import { CreateAcademyDto } from './dto/create-academy.dto.js';
 import { UpdateAcademyDto } from './dto/update-academy.dto.js';
 
 type AuthenticatedRequest = Request & {
   user: {
-    sub: string;
+    id: string;
+    email: string;
+    roles: string[];
   };
 };
 
@@ -51,7 +54,7 @@ export class AcademiesController {
     @Body() dto: CreateAcademyDto,
   ) {
     return this.academies.createAcademy(
-      req.user.sub,
+      req.user.id,
       dto,
     );
   }
@@ -97,7 +100,7 @@ export class AcademiesController {
     @Body() dto: UpdateAcademyDto,
   ) {
     return this.academies.updateAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
       dto,
     );
@@ -115,10 +118,40 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.deleteAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
+  /**
+ * Get academy statistics.
+ *
+ * GET /api/v1/academies/:academyId/statistics
+ */
+@UseGuards(JwtAuthGuard)
+@Get(':academyId/statistics')
+getAcademyStatistics(
+  @Param('academyId') academyId: string,
+) {
+  return this.academies.getAcademyStatistics(
+    academyId,
+  );
+}
+/**
+ * Request academy verification.
+ *
+ * POST /api/v1/academies/:academyId/verification/request
+ */
+@UseGuards(JwtAuthGuard)
+@Post(':academyId/verification/request')
+requestVerification(
+  @Req() req: AuthenticatedRequest,
+  @Param('academyId') academyId: string,
+) {
+  return this.academies.requestVerification(
+    req.user.id,
+    academyId,
+  );
+}
 
   // ============================================================
   // ACADEMY PLAYERS
@@ -151,7 +184,7 @@ export class AcademiesController {
     @Body() dto: AddAcademyPlayerDto,
   ) {
     return this.academies.addAcademyPlayer(
-      req.user.sub,
+      req.user.id,
       academyId,
       dto,
     );
@@ -170,8 +203,62 @@ export class AcademiesController {
     @Param('playerId') playerId: string,
   ) {
     return this.academies.removeAcademyPlayer(
-      req.user.sub,
+      req.user.id,
       academyId,
+      playerId,
+    );
+  }
+    // ============================================================
+  // ACADEMY TEAM PLAYERS
+  // ============================================================
+/**
+ * Add player to a team.
+ *
+ * POST /api/v1/academies/teams/:teamId/players
+ */
+@UseGuards(JwtAuthGuard)
+@Post('teams/:teamId/players')
+addTeamPlayer(
+  @Req() req: AuthenticatedRequest,
+  @Param('teamId') teamId: string,
+  @Body() dto: AddTeamPlayerDto,
+) {
+  return this.academies.addTeamPlayer(
+    req.user.id,
+    teamId,
+    dto,
+  );
+}
+  /**
+   * Get players assigned to a team.
+   *
+   * GET /api/v1/academies/teams/:teamId/players
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('teams/:teamId/players')
+  getTeamPlayers(
+    @Param('teamId') teamId: string,
+  ) {
+    return this.academies.getTeamPlayers(
+      teamId,
+    );
+  }
+
+  /**
+   * Remove player from team.
+   *
+   * DELETE /api/v1/academies/teams/:teamId/players/:playerId
+   */
+  @UseGuards(JwtAuthGuard)
+  @Delete('teams/:teamId/players/:playerId')
+  removeTeamPlayer(
+    @Req() req: AuthenticatedRequest,
+    @Param('teamId') teamId: string,
+    @Param('playerId') playerId: string,
+  ) {
+    return this.academies.removeTeamPlayer(
+      req.user.id,
+      teamId,
       playerId,
     );
   }
@@ -207,7 +294,7 @@ export class AcademiesController {
     @Body() dto: AddAcademyCoachDto,
   ) {
     return this.academies.addAcademyCoach(
-      req.user.sub,
+      req.user.id,
       academyId,
       dto,
     );
@@ -226,7 +313,7 @@ export class AcademiesController {
     @Param('coachId') coachId: string,
   ) {
     return this.academies.removeAcademyCoach(
-      req.user.sub,
+      req.user.id,
       academyId,
       coachId,
     );
@@ -248,7 +335,7 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.followAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
@@ -265,7 +352,7 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.unfollowAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
@@ -282,7 +369,7 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.isFollowingAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
@@ -317,7 +404,7 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.likeAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
@@ -334,7 +421,7 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.unlikeAcademy(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
@@ -352,7 +439,7 @@ export class AcademiesController {
     @Param('academyId') academyId: string,
   ) {
     return this.academies.isAcademyLiked(
-      req.user.sub,
+      req.user.id,
       academyId,
     );
   }
