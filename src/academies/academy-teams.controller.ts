@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Req,
@@ -23,7 +24,9 @@ import { UpdateTeamDto } from './dto/update-team.dto.js';
 
 type AuthenticatedRequest = Request & {
   user: {
-    sub: string;
+    id: string;
+    email: string;
+    roles: string[];
   };
 };
 
@@ -34,30 +37,40 @@ export class AcademyTeamsController {
   ) {}
 
   /**
-   * Create a team.
+   * Create team.
+   *
+   * POST /api/v1/academies/:academyId/teams
    */
   @UseGuards(JwtAuthGuard)
   @Post()
   createTeam(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
     @Body() dto: CreateTeamDto,
   ) {
     return this.teams.createTeam(
-      req.user.sub,
+      req.user.id,
       academyId,
       dto,
     );
   }
 
   /**
-   * Get all teams belonging to an academy.
+   * Get academy teams.
    *
-   * Public endpoint.
+   * GET /api/v1/academies/:academyId/teams
    */
   @Get()
   getTeams(
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.teams.getTeams(
       academyId,
@@ -67,12 +80,20 @@ export class AcademyTeamsController {
   /**
    * Get one team.
    *
-   * Public endpoint.
+   * GET /api/v1/academies/:academyId/teams/:teamId
    */
   @Get(':teamId')
   getTeam(
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
   ) {
     return this.teams.getTeam(
       academyId,
@@ -81,18 +102,28 @@ export class AcademyTeamsController {
   }
 
   /**
-   * Update a team.
+   * Update team.
+   *
+   * PATCH /api/v1/academies/:academyId/teams/:teamId
    */
   @UseGuards(JwtAuthGuard)
   @Patch(':teamId')
   updateTeam(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
     @Body() dto: UpdateTeamDto,
   ) {
     return this.teams.updateTeam(
-      req.user.sub,
+      req.user.id,
       academyId,
       teamId,
       dto,
@@ -100,35 +131,59 @@ export class AcademyTeamsController {
   }
 
   /**
-   * Delete a team.
+   * Delete team.
+   *
+   * DELETE /api/v1/academies/:academyId/teams/:teamId
    */
   @UseGuards(JwtAuthGuard)
   @Delete(':teamId')
   deleteTeam(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
   ) {
     return this.teams.deleteTeam(
-      req.user.sub,
+      req.user.id,
       academyId,
       teamId,
     );
   }
 
+  // ============================================================
+  // TEAM PLAYERS
+  // ============================================================
+
   /**
-   * Add a player to a team.
+   * Add player to team.
+   *
+   * POST /api/v1/academies/:academyId/teams/:teamId/players
    */
   @UseGuards(JwtAuthGuard)
   @Post(':teamId/players')
   addPlayer(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
     @Body() dto: AddTeamPlayerDto,
   ) {
     return this.teams.addPlayer(
-      req.user.sub,
+      req.user.id,
       academyId,
       teamId,
       dto,
@@ -136,37 +191,65 @@ export class AcademyTeamsController {
   }
 
   /**
-   * Remove a player from a team.
+   * Remove player from team.
+   *
+   * DELETE /api/v1/academies/:academyId/teams/:teamId/players/:playerId
    */
   @UseGuards(JwtAuthGuard)
   @Delete(':teamId/players/:playerId')
   removePlayer(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
-    @Param('playerId') playerId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
+    @Param(
+      'playerId',
+      new ParseUUIDPipe(),
+    )
+    playerId: string,
   ) {
     return this.teams.removePlayer(
-      req.user.sub,
+      req.user.id,
       academyId,
       teamId,
       playerId,
     );
   }
 
+  // ============================================================
+  // TEAM COACHES
+  // ============================================================
+
   /**
-   * Add a coach to a team.
+   * Add coach to team.
+   *
+   * POST /api/v1/academies/:academyId/teams/:teamId/coaches
    */
   @UseGuards(JwtAuthGuard)
   @Post(':teamId/coaches')
   addCoach(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
     @Body() dto: AddTeamCoachDto,
   ) {
     return this.teams.addCoach(
-      req.user.sub,
+      req.user.id,
       academyId,
       teamId,
       dto,
@@ -174,18 +257,32 @@ export class AcademyTeamsController {
   }
 
   /**
-   * Remove a coach from a team.
+   * Remove coach from team.
+   *
+   * DELETE /api/v1/academies/:academyId/teams/:teamId/coaches/:coachId
    */
   @UseGuards(JwtAuthGuard)
   @Delete(':teamId/coaches/:coachId')
   removeCoach(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('teamId') teamId: string,
-    @Param('coachId') coachId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'teamId',
+      new ParseUUIDPipe(),
+    )
+    teamId: string,
+    @Param(
+      'coachId',
+      new ParseUUIDPipe(),
+    )
+    coachId: string,
   ) {
     return this.teams.removeCoach(
-      req.user.sub,
+      req.user.id,
       academyId,
       teamId,
       coachId,

@@ -24,7 +24,9 @@ export declare class CoachesController {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -35,8 +37,6 @@ export declare class CoachesController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             currentAcademyClub: string | null;
             coachingRole: string | null;
@@ -56,25 +56,27 @@ export declare class CoachesController {
         data: ({
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -85,8 +87,6 @@ export declare class CoachesController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             currentAcademyClub: string | null;
             coachingRole: string | null;
@@ -105,7 +105,9 @@ export declare class CoachesController {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -116,8 +118,6 @@ export declare class CoachesController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             currentAcademyClub: string | null;
             coachingRole: string | null;
@@ -146,21 +146,21 @@ export declare class CoachesController {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     /**
@@ -173,21 +173,21 @@ export declare class CoachesController {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         }[];
     }>;
     /**
@@ -200,21 +200,21 @@ export declare class CoachesController {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     /**
@@ -334,25 +334,27 @@ export declare class CoachesController {
         data: {
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -363,8 +365,6 @@ export declare class CoachesController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             currentAcademyClub: string | null;
             coachingRole: string | null;

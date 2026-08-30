@@ -19,7 +19,10 @@ export declare class ScoutsController {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            role: string | null;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             fullName: string;
             country: string | null;
@@ -28,11 +31,8 @@ export declare class ScoutsController {
             biography: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             organization: string | null;
-            role: string | null;
             contactEmail: string | null;
             contactPhone: string | null;
         };
@@ -43,25 +43,28 @@ export declare class ScoutsController {
         data: ({
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
+            role: string | null;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             fullName: string;
             country: string | null;
@@ -70,11 +73,8 @@ export declare class ScoutsController {
             biography: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             organization: string | null;
-            role: string | null;
             contactEmail: string | null;
             contactPhone: string | null;
         }) | null;
@@ -84,7 +84,10 @@ export declare class ScoutsController {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            role: string | null;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             fullName: string;
             country: string | null;
@@ -93,11 +96,8 @@ export declare class ScoutsController {
             biography: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             organization: string | null;
-            role: string | null;
             contactEmail: string | null;
             contactPhone: string | null;
         };
@@ -112,21 +112,21 @@ export declare class ScoutsController {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     getMyAchievements(req: AuthenticatedRequest): Promise<{
@@ -134,21 +134,21 @@ export declare class ScoutsController {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         }[];
     }>;
     updateAchievement(req: AuthenticatedRequest, achievementId: string, dto: UpdateScoutAchievementDto): Promise<{
@@ -156,21 +156,21 @@ export declare class ScoutsController {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     deleteAchievement(req: AuthenticatedRequest, achievementId: string): Promise<{
@@ -240,25 +240,28 @@ export declare class ScoutsController {
         data: {
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
+            role: string | null;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             fullName: string;
             country: string | null;
@@ -267,11 +270,8 @@ export declare class ScoutsController {
             biography: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
             organization: string | null;
-            role: string | null;
             contactEmail: string | null;
             contactPhone: string | null;
         };

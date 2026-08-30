@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -20,7 +21,6 @@ import { AcademiesService } from './academies.service.js';
 import { AcademyQueryDto } from './dto/academy-query.dto.js';
 import { AddAcademyCoachDto } from './dto/add-academy-coach.dto.js';
 import { AddAcademyPlayerDto } from './dto/add-academy-player.dto.js';
-import { AddTeamPlayerDto } from './dto/add-team-player.dto.js';
 import { CreateAcademyDto } from './dto/create-academy.dto.js';
 import { UpdateAcademyDto } from './dto/update-academy.dto.js';
 
@@ -69,7 +69,9 @@ export class AcademiesController {
   getAcademies(
     @Query() query: AcademyQueryDto,
   ) {
-    return this.academies.getAcademies(query);
+    return this.academies.getAcademies(
+      query,
+    );
   }
 
   /**
@@ -80,7 +82,11 @@ export class AcademiesController {
   @UseGuards(JwtAuthGuard)
   @Get(':academyId')
   getAcademy(
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.getAcademyById(
       academyId,
@@ -96,7 +102,11 @@ export class AcademiesController {
   @Patch(':academyId')
   updateAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
     @Body() dto: UpdateAcademyDto,
   ) {
     return this.academies.updateAcademy(
@@ -115,43 +125,57 @@ export class AcademiesController {
   @Delete(':academyId')
   deleteAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.deleteAcademy(
       req.user.id,
       academyId,
     );
   }
+
   /**
- * Get academy statistics.
- *
- * GET /api/v1/academies/:academyId/statistics
- */
-@UseGuards(JwtAuthGuard)
-@Get(':academyId/statistics')
-getAcademyStatistics(
-  @Param('academyId') academyId: string,
-) {
-  return this.academies.getAcademyStatistics(
-    academyId,
-  );
-}
-/**
- * Request academy verification.
- *
- * POST /api/v1/academies/:academyId/verification/request
- */
-@UseGuards(JwtAuthGuard)
-@Post(':academyId/verification/request')
-requestVerification(
-  @Req() req: AuthenticatedRequest,
-  @Param('academyId') academyId: string,
-) {
-  return this.academies.requestVerification(
-    req.user.id,
-    academyId,
-  );
-}
+   * Get academy statistics.
+   *
+   * GET /api/v1/academies/:academyId/statistics
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get(':academyId/statistics')
+  getAcademyStatistics(
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+  ) {
+    return this.academies.getAcademyStatistics(
+      academyId,
+    );
+  }
+
+  /**
+   * Request academy verification.
+   *
+   * POST /api/v1/academies/:academyId/verification/request
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post(':academyId/verification/request')
+  requestVerification(
+    @Req() req: AuthenticatedRequest,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+  ) {
+    return this.academies.requestVerification(
+      req.user.id,
+      academyId,
+    );
+  }
 
   // ============================================================
   // ACADEMY PLAYERS
@@ -164,7 +188,11 @@ requestVerification(
    */
   @Get(':academyId/players')
   getAcademyPlayers(
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.getAcademyPlayers(
       academyId,
@@ -180,7 +208,11 @@ requestVerification(
   @Post(':academyId/players')
   addAcademyPlayer(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
     @Body() dto: AddAcademyPlayerDto,
   ) {
     return this.academies.addAcademyPlayer(
@@ -199,66 +231,20 @@ requestVerification(
   @Delete(':academyId/players/:playerId')
   removeAcademyPlayer(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('playerId') playerId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'playerId',
+      new ParseUUIDPipe(),
+    )
+    playerId: string,
   ) {
     return this.academies.removeAcademyPlayer(
       req.user.id,
       academyId,
-      playerId,
-    );
-  }
-    // ============================================================
-  // ACADEMY TEAM PLAYERS
-  // ============================================================
-/**
- * Add player to a team.
- *
- * POST /api/v1/academies/teams/:teamId/players
- */
-@UseGuards(JwtAuthGuard)
-@Post('teams/:teamId/players')
-addTeamPlayer(
-  @Req() req: AuthenticatedRequest,
-  @Param('teamId') teamId: string,
-  @Body() dto: AddTeamPlayerDto,
-) {
-  return this.academies.addTeamPlayer(
-    req.user.id,
-    teamId,
-    dto,
-  );
-}
-  /**
-   * Get players assigned to a team.
-   *
-   * GET /api/v1/academies/teams/:teamId/players
-   */
-  @UseGuards(JwtAuthGuard)
-  @Get('teams/:teamId/players')
-  getTeamPlayers(
-    @Param('teamId') teamId: string,
-  ) {
-    return this.academies.getTeamPlayers(
-      teamId,
-    );
-  }
-
-  /**
-   * Remove player from team.
-   *
-   * DELETE /api/v1/academies/teams/:teamId/players/:playerId
-   */
-  @UseGuards(JwtAuthGuard)
-  @Delete('teams/:teamId/players/:playerId')
-  removeTeamPlayer(
-    @Req() req: AuthenticatedRequest,
-    @Param('teamId') teamId: string,
-    @Param('playerId') playerId: string,
-  ) {
-    return this.academies.removeTeamPlayer(
-      req.user.id,
-      teamId,
       playerId,
     );
   }
@@ -274,7 +260,11 @@ addTeamPlayer(
    */
   @Get(':academyId/coaches')
   getAcademyCoaches(
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.getAcademyCoaches(
       academyId,
@@ -290,7 +280,11 @@ addTeamPlayer(
   @Post(':academyId/coaches')
   addAcademyCoach(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
     @Body() dto: AddAcademyCoachDto,
   ) {
     return this.academies.addAcademyCoach(
@@ -309,8 +303,16 @@ addTeamPlayer(
   @Delete(':academyId/coaches/:coachId')
   removeAcademyCoach(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
-    @Param('coachId') coachId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
+    @Param(
+      'coachId',
+      new ParseUUIDPipe(),
+    )
+    coachId: string,
   ) {
     return this.academies.removeAcademyCoach(
       req.user.id,
@@ -332,7 +334,11 @@ addTeamPlayer(
   @Post(':academyId/follow')
   followAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.followAcademy(
       req.user.id,
@@ -349,7 +355,11 @@ addTeamPlayer(
   @Delete(':academyId/follow')
   unfollowAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.unfollowAcademy(
       req.user.id,
@@ -366,7 +376,11 @@ addTeamPlayer(
   @Get(':academyId/is-following')
   isFollowingAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.isFollowingAcademy(
       req.user.id,
@@ -381,7 +395,11 @@ addTeamPlayer(
    */
   @Get(':academyId/followers/count')
   getAcademyFollowerCount(
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.getAcademyFollowerCount(
       academyId,
@@ -401,7 +419,11 @@ addTeamPlayer(
   @Post(':academyId/like')
   likeAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.likeAcademy(
       req.user.id,
@@ -418,7 +440,11 @@ addTeamPlayer(
   @Delete(':academyId/like')
   unlikeAcademy(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.unlikeAcademy(
       req.user.id,
@@ -436,7 +462,11 @@ addTeamPlayer(
   @Get(':academyId/is-liked')
   isAcademyLiked(
     @Req() req: AuthenticatedRequest,
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.isAcademyLiked(
       req.user.id,
@@ -451,7 +481,11 @@ addTeamPlayer(
    */
   @Get(':academyId/likes/count')
   getAcademyLikesCount(
-    @Param('academyId') academyId: string,
+    @Param(
+      'academyId',
+      new ParseUUIDPipe(),
+    )
+    academyId: string,
   ) {
     return this.academies.getAcademyLikesCount(
       academyId,

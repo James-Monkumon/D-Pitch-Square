@@ -8,9 +8,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService, } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { PrismaModule } from '../prisma/prisma.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
+import { PermissionsGuard } from './guards/permissions.guard.js';
 let AuthModule = class AuthModule {
 };
 AuthModule = __decorate([
@@ -18,6 +22,7 @@ AuthModule = __decorate([
         imports: [
             ConfigModule,
             PassportModule,
+            PrismaModule,
             JwtModule.registerAsync({
                 imports: [ConfigModule],
                 inject: [ConfigService],
@@ -30,8 +35,16 @@ AuthModule = __decorate([
         providers: [
             AuthService,
             JwtStrategy,
+            JwtAuthGuard,
+            RolesGuard,
+            PermissionsGuard,
         ],
-        exports: [AuthService],
+        exports: [
+            AuthService,
+            JwtAuthGuard,
+            RolesGuard,
+            PermissionsGuard,
+        ],
     })
 ], AuthModule);
 export { AuthModule };

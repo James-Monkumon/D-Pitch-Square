@@ -2,7 +2,6 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { AcademyQueryDto } from './dto/academy-query.dto.js';
 import { AddAcademyCoachDto } from './dto/add-academy-coach.dto.js';
 import { AddAcademyPlayerDto } from './dto/add-academy-player.dto.js';
-import { AddTeamPlayerDto } from './dto/add-team-player.dto.js';
 import { CreateAcademyDto } from './dto/create-academy.dto.js';
 import { UpdateAcademyDto } from './dto/update-academy.dto.js';
 export declare class AcademiesService {
@@ -30,17 +29,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            description: string | null;
             userId: string;
+            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
-            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -60,17 +59,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            description: string | null;
             userId: string;
+            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
-            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -89,7 +88,7 @@ export declare class AcademiesService {
         };
     }>;
     /**
-     * Get one public academy profile.
+     * Get one academy profile.
      *
      * GET /api/v1/academies/:academyId
      */
@@ -98,17 +97,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            description: string | null;
             userId: string;
+            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
-            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -128,17 +127,17 @@ export declare class AcademiesService {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            description: string | null;
             userId: string;
+            updatedAt: Date;
             country: string | null;
             state: string | null;
             city: string | null;
             address: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
-            description: string | null;
             logoUrl: string | null;
             coverImageUrl: string | null;
             academyName: string;
@@ -193,6 +192,11 @@ export declare class AcademiesService {
     }>;
     /**
      * Add a player to an academy.
+     *
+     * If a previous academy membership exists and was
+     * soft-removed, reactivate the same row.
+     *
+     * POST /api/v1/academies/:academyId/players
      */
     addAcademyPlayer(userId: string, academyId: string, dto: AddAcademyPlayerDto): Promise<{
         success: boolean;
@@ -215,6 +219,11 @@ export declare class AcademiesService {
     }>;
     /**
      * Remove a player from an academy.
+     *
+     * The academy membership and any currently active team
+     * assignments inside this academy are soft-removed.
+     *
+     * DELETE /api/v1/academies/:academyId/players/:playerId
      */
     removeAcademyPlayer(userId: string, academyId: string, playerId: string): Promise<{
         success: boolean;
@@ -222,10 +231,10 @@ export declare class AcademiesService {
         data: null;
     }>;
     /**
-   * Get academy statistics.
-   *
-   * GET /api/v1/academies/:academyId/statistics
-   */
+     * Get academy statistics.
+     *
+     * GET /api/v1/academies/:academyId/statistics
+     */
     getAcademyStatistics(academyId: string): Promise<{
         success: boolean;
         message: string;
@@ -236,6 +245,11 @@ export declare class AcademiesService {
             totalFollowers: number;
         };
     }>;
+    /**
+     * Request academy verification.
+     *
+     * POST /api/v1/academies/:academyId/verification/request
+     */
     requestVerification(userId: string, academyId: string): Promise<{
         success: boolean;
         message: string;
@@ -244,79 +258,16 @@ export declare class AcademiesService {
         };
     }>;
     /**
-     * Add a player to a team.
-     *
-     * POST /api/v1/academies/teams/:teamId/players
-     */
-    addTeamPlayer(userId: string, teamId: string, dto: AddTeamPlayerDto): Promise<{
-        success: boolean;
-        message: string;
-        data: {
-            id: string;
-            jerseyNumber: number | null;
-            createdAt: Date;
-            updatedAt: Date;
-            playerId: string;
-            player: {
-                id: string;
-                profilePicture: string | null;
-                fullName: string;
-                preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
-                primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-                secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-            };
-            joinedAt: Date;
-            leftAt: Date | null;
-            teamId: string;
-        };
-    }>;
-    /**
-     * Get all active players assigned to a team.
-     *
-     * GET /api/v1/academies/teams/:teamId/players
-     */
-    getTeamPlayers(teamId: string): Promise<{
-        success: boolean;
-        message: string;
-        data: {
-            id: string;
-            jerseyNumber: number | null;
-            createdAt: Date;
-            updatedAt: Date;
-            playerId: string;
-            player: {
-                id: string;
-                profilePicture: string | null;
-                fullName: string;
-                preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
-                primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-                secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-            };
-            joinedAt: Date;
-            leftAt: Date | null;
-            teamId: string;
-        }[];
-    }>;
-    /**
-     * Remove a player from a team.
-     *
-     * DELETE /api/v1/academies/teams/:teamId/players/:playerId
-     */
-    removeTeamPlayer(userId: string, teamId: string, playerId: string): Promise<{
-        success: boolean;
-        message: string;
-        data: null;
-    }>;
-    /**
      * Get all active coaches belonging
      * to an academy.
+     *
+     * GET /api/v1/academies/:academyId/coaches
      */
     getAcademyCoaches(academyId: string): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            coachId: string;
             role: string | null;
             coach: {
                 id: string;
@@ -331,19 +282,24 @@ export declare class AcademiesService {
                 coachingCertification: string | null;
                 yearsOfExperience: number | null;
             };
+            coachId: string;
             joinedAt: Date;
             leftAt: Date | null;
         }[];
     }>;
     /**
      * Add a coach to an academy.
+     *
+     * If a previous academy membership exists and was
+     * soft-removed, reactivate the same row.
+     *
+     * POST /api/v1/academies/:academyId/coaches
      */
     addAcademyCoach(userId: string, academyId: string, dto: AddAcademyCoachDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            coachId: string;
             role: string | null;
             coach: {
                 id: string;
@@ -352,6 +308,7 @@ export declare class AcademiesService {
                 coachingRole: string | null;
                 yearsOfExperience: number | null;
             };
+            coachId: string;
             academyId: string;
             joinedAt: Date;
             leftAt: Date | null;
@@ -359,6 +316,11 @@ export declare class AcademiesService {
     }>;
     /**
      * Remove a coach from an academy.
+     *
+     * The academy membership and any active team assignments
+     * in this academy are soft-removed.
+     *
+     * DELETE /api/v1/academies/:academyId/coaches/:coachId
      */
     removeAcademyCoach(userId: string, academyId: string, coachId: string): Promise<{
         success: boolean;
@@ -367,6 +329,8 @@ export declare class AcademiesService {
     }>;
     /**
      * Follow an academy.
+     *
+     * POST /api/v1/academies/:academyId/follow
      */
     followAcademy(userId: string, academyId: string): Promise<{
         success: boolean;
@@ -377,6 +341,8 @@ export declare class AcademiesService {
     }>;
     /**
      * Unfollow an academy.
+     *
+     * DELETE /api/v1/academies/:academyId/follow
      */
     unfollowAcademy(userId: string, academyId: string): Promise<{
         success: boolean;
@@ -387,6 +353,8 @@ export declare class AcademiesService {
     }>;
     /**
      * Check whether a user follows an academy.
+     *
+     * GET /api/v1/academies/:academyId/is-following
      */
     isFollowingAcademy(userId: string, academyId: string): Promise<{
         success: boolean;
@@ -397,6 +365,8 @@ export declare class AcademiesService {
     }>;
     /**
      * Get academy follower count.
+     *
+     * GET /api/v1/academies/:academyId/followers/count
      */
     getAcademyFollowerCount(academyId: string): Promise<{
         success: boolean;
@@ -443,8 +413,7 @@ export declare class AcademiesService {
         };
     }>;
     /**
-     * Get total number of likes
-     * for an academy.
+     * Get total number of likes for an academy.
      *
      * GET /api/v1/academies/:academyId/likes/count
      */

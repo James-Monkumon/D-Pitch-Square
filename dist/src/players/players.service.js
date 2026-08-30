@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, } from '@nestjs/common';
-import { AchievementOwnerType, AchievementType, } from '@prisma/client';
+import { AchievementOwnerType, AchievementType, AchievementVerificationStatus, VerificationStatus, } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 let PlayersService = class PlayersService {
     prisma;
@@ -321,6 +321,44 @@ let PlayersService = class PlayersService {
         };
     }
     // =========================================================
+    // PLAYER PROFILE VERIFICATION
+    // =========================================================
+    /**
+     * Submit player profile for admin verification.
+     *
+     * Allowed:
+     * NOT_REQUESTED -> PENDING
+     * REJECTED      -> PENDING
+     */
+    async submitProfileForVerification(userId) {
+        const player = await this.verifyPlayerOwner(userId);
+        if (player.verificationStatus !==
+            VerificationStatus.NOT_REQUESTED &&
+            player.verificationStatus !==
+                VerificationStatus.REJECTED) {
+            throw new BadRequestException(`Player verification cannot be submitted from ${player.verificationStatus}`);
+        }
+        const updated = await this.prisma.playerProfile.update({
+            where: {
+                id: player.id,
+            },
+            data: {
+                verificationStatus: VerificationStatus.PENDING,
+            },
+            select: {
+                id: true,
+                fullName: true,
+                verificationStatus: true,
+                updatedAt: true,
+            },
+        });
+        return {
+            success: true,
+            message: 'Player profile submitted for verification successfully',
+            data: updated,
+        };
+    }
+    // =========================================================
     // PLAYER STATISTICS
     // =========================================================
     /**
@@ -532,6 +570,48 @@ let PlayersService = class PlayersService {
             success: true,
             message: 'Player achievement deleted successfully',
             data: null,
+        };
+    }
+    // =========================================================
+    // PLAYER ACHIEVEMENT VERIFICATION
+    // =========================================================
+    /**
+     * Submit one of my achievements for verification.
+     *
+     * Allowed:
+     * UNVERIFIED -> PENDING
+     * REJECTED   -> PENDING
+     */
+    async submitAchievementForVerification(userId, achievementId) {
+        const player = await this.verifyPlayerOwner(userId);
+        const achievement = await this.prisma.achievement.findFirst({
+            where: {
+                id: achievementId,
+                ownerType: AchievementOwnerType.PLAYER,
+                playerId: player.id,
+            },
+        });
+        if (!achievement) {
+            throw new NotFoundException('Player achievement not found');
+        }
+        if (achievement.verificationStatus !==
+            AchievementVerificationStatus.UNVERIFIED &&
+            achievement.verificationStatus !==
+                AchievementVerificationStatus.REJECTED) {
+            throw new BadRequestException(`Achievement verification cannot be submitted from ${achievement.verificationStatus}`);
+        }
+        const updated = await this.prisma.achievement.update({
+            where: {
+                id: achievementId,
+            },
+            data: {
+                verificationStatus: AchievementVerificationStatus.PENDING,
+            },
+        });
+        return {
+            success: true,
+            message: 'Player achievement submitted for verification successfully',
+            data: updated,
         };
     }
     // =========================================================

@@ -10,13 +10,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards, } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards, } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { AcademiesService } from './academies.service.js';
 import { AcademyQueryDto } from './dto/academy-query.dto.js';
 import { AddAcademyCoachDto } from './dto/add-academy-coach.dto.js';
 import { AddAcademyPlayerDto } from './dto/add-academy-player.dto.js';
-import { AddTeamPlayerDto } from './dto/add-team-player.dto.js';
 import { CreateAcademyDto } from './dto/create-academy.dto.js';
 import { UpdateAcademyDto } from './dto/update-academy.dto.js';
 let AcademiesController = class AcademiesController {
@@ -68,10 +67,10 @@ let AcademiesController = class AcademiesController {
         return this.academies.deleteAcademy(req.user.id, academyId);
     }
     /**
-   * Get academy statistics.
-   *
-   * GET /api/v1/academies/:academyId/statistics
-   */
+     * Get academy statistics.
+     *
+     * GET /api/v1/academies/:academyId/statistics
+     */
     getAcademyStatistics(academyId) {
         return this.academies.getAcademyStatistics(academyId);
     }
@@ -109,33 +108,6 @@ let AcademiesController = class AcademiesController {
      */
     removeAcademyPlayer(req, academyId, playerId) {
         return this.academies.removeAcademyPlayer(req.user.id, academyId, playerId);
-    }
-    // ============================================================
-    // ACADEMY TEAM PLAYERS
-    // ============================================================
-    /**
-     * Add player to a team.
-     *
-     * POST /api/v1/academies/teams/:teamId/players
-     */
-    addTeamPlayer(req, teamId, dto) {
-        return this.academies.addTeamPlayer(req.user.id, teamId, dto);
-    }
-    /**
-     * Get players assigned to a team.
-     *
-     * GET /api/v1/academies/teams/:teamId/players
-     */
-    getTeamPlayers(teamId) {
-        return this.academies.getTeamPlayers(teamId);
-    }
-    /**
-     * Remove player from team.
-     *
-     * DELETE /api/v1/academies/teams/:teamId/players/:playerId
-     */
-    removeTeamPlayer(req, teamId, playerId) {
-        return this.academies.removeTeamPlayer(req.user.id, teamId, playerId);
     }
     // ============================================================
     // ACADEMY COACHES
@@ -256,7 +228,7 @@ __decorate([
 __decorate([
     UseGuards(JwtAuthGuard),
     Get(':academyId'),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -265,7 +237,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Patch(':academyId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __param(2, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, UpdateAcademyDto]),
@@ -275,7 +247,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':academyId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
@@ -283,7 +255,7 @@ __decorate([
 __decorate([
     UseGuards(JwtAuthGuard),
     Get(':academyId/statistics'),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -292,14 +264,14 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':academyId/verification/request'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AcademiesController.prototype, "requestVerification", null);
 __decorate([
     Get(':academyId/players'),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -308,7 +280,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':academyId/players'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __param(2, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, AddAcademyPlayerDto]),
@@ -318,43 +290,15 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':academyId/players/:playerId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('playerId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('playerId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", void 0)
 ], AcademiesController.prototype, "removeAcademyPlayer", null);
 __decorate([
-    UseGuards(JwtAuthGuard),
-    Post('teams/:teamId/players'),
-    __param(0, Req()),
-    __param(1, Param('teamId')),
-    __param(2, Body()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, AddTeamPlayerDto]),
-    __metadata("design:returntype", void 0)
-], AcademiesController.prototype, "addTeamPlayer", null);
-__decorate([
-    UseGuards(JwtAuthGuard),
-    Get('teams/:teamId/players'),
-    __param(0, Param('teamId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], AcademiesController.prototype, "getTeamPlayers", null);
-__decorate([
-    UseGuards(JwtAuthGuard),
-    Delete('teams/:teamId/players/:playerId'),
-    __param(0, Req()),
-    __param(1, Param('teamId')),
-    __param(2, Param('playerId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String]),
-    __metadata("design:returntype", void 0)
-], AcademiesController.prototype, "removeTeamPlayer", null);
-__decorate([
     Get(':academyId/coaches'),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -363,7 +307,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':academyId/coaches'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __param(2, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, AddAcademyCoachDto]),
@@ -373,8 +317,8 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':academyId/coaches/:coachId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('coachId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('coachId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", void 0)
@@ -383,7 +327,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':academyId/follow'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
@@ -392,7 +336,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':academyId/follow'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
@@ -401,14 +345,14 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Get(':academyId/is-following'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AcademiesController.prototype, "isFollowingAcademy", null);
 __decorate([
     Get(':academyId/followers/count'),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -417,7 +361,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':academyId/like'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
@@ -426,7 +370,7 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':academyId/like'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
@@ -435,14 +379,14 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Get(':academyId/is-liked'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AcademiesController.prototype, "isAcademyLiked", null);
 __decorate([
     Get(':academyId/likes/count'),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)

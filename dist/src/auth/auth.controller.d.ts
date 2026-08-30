@@ -20,7 +20,7 @@ export declare class AuthController {
                 id: string;
                 email: string;
                 status: import("@prisma/client").$Enums.UserStatus;
-                roles: string[];
+                roles: import("@prisma/client").$Enums.RoleName[];
             };
             verificationToken: string;
         };
@@ -34,8 +34,8 @@ export declare class AuthController {
             user: {
                 id: string;
                 email: string;
-                status: "PENDING" | "ACTIVE";
-                roles: string[];
+                status: "ACTIVE" | "PENDING";
+                roles: import("@prisma/client").$Enums.RoleName[];
             };
         };
     }>;
@@ -61,7 +61,7 @@ export declare class AuthController {
         data: {
             email: string;
             emailVerifiedAt: Date;
-            status: string;
+            status: "ACTIVE";
         };
     }>;
     resendVerification(dto: ResendVerificationDto): Promise<{
@@ -93,7 +93,7 @@ export declare class AuthController {
     }>;
     logout(req: Request & {
         user: {
-            sub: string;
+            id: string;
         };
     }): Promise<{
         success: boolean;

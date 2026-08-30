@@ -58,21 +58,27 @@ export class AuthController {
   resendVerification(
     @Body() dto: ResendVerificationDto,
   ) {
-    return this.auth.resendVerification(dto);
+    return this.auth.resendVerification(
+      dto,
+    );
   }
 
   @Post('forgot-password')
   forgotPassword(
     @Body() dto: ForgotPasswordDto,
   ) {
-    return this.auth.forgotPassword(dto);
+    return this.auth.forgotPassword(
+      dto,
+    );
   }
 
   @Post('reset-password')
   resetPassword(
     @Body() dto: ResetPasswordDto,
   ) {
-    return this.auth.resetPassword(dto);
+    return this.auth.resetPassword(
+      dto,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -81,12 +87,12 @@ export class AuthController {
     @Req()
     req: Request & {
       user: {
-        sub: string;
+        id: string;
       };
     },
   ) {
     return this.auth.logout(
-      req.user.sub,
+      req.user.id,
     );
   }
 }

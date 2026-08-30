@@ -47,7 +47,7 @@ let AuthController = class AuthController {
         return this.auth.resetPassword(dto);
     }
     logout(req) {
-        return this.auth.logout(req.user.sub);
+        return this.auth.logout(req.user.id);
     }
 };
 __decorate([

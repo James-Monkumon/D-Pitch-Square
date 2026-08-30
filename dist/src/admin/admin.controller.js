@@ -10,64 +10,135 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Body, Controller, Param, Patch, UseGuards, } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Req, UseGuards, } from '@nestjs/common';
+import { Permissions } from '../auth/decorators/permissions.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { PermissionsGuard } from '../auth/guards/permissions.guard.js';
 import { AdminService } from './admin.service.js';
-import { UpdateVerificationDto } from './dto/update-verification.dto.js';
+import { UpdateVerificationDto, } from './dto/update-verification.dto.js';
+import { UpdateAchievementVerificationDto, } from './dto/update-achievement-verification.dto.js';
 let AdminController = class AdminController {
     adminService;
     constructor(adminService) {
         this.adminService = adminService;
     }
-    verifyPlayer(playerId, dto) {
-        return this.adminService.verifyPlayer(playerId, dto.verificationStatus);
+    // =========================================================
+    // PENDING VERIFICATIONS
+    // =========================================================
+    /**
+     * GET /api/v1/admin/verifications/profiles
+     */
+    getPendingProfileVerifications() {
+        return this.adminService
+            .getPendingProfileVerifications();
     }
-    verifyAcademy(academyId, dto) {
-        return this.adminService.verifyAcademy(academyId, dto.verificationStatus);
+    /**
+     * GET /api/v1/admin/verifications/achievements
+     */
+    getPendingAchievementVerifications() {
+        return this.adminService
+            .getPendingAchievementVerifications();
     }
-    verifyScout(scoutId, dto) {
-        return this.adminService.verifyScout(scoutId, dto.verificationStatus);
+    // =========================================================
+    // PROFILE VERIFICATION
+    // =========================================================
+    /**
+     * PATCH /api/v1/admin/players/:playerId/verification
+     */
+    verifyPlayer(req, playerId, dto) {
+        return this.adminService.verifyPlayer(req.user.id, playerId, dto.verificationStatus);
     }
-    verifyCoach(coachId, dto) {
-        return this.adminService.verifyCoach(coachId, dto.verificationStatus);
+    /**
+     * PATCH /api/v1/admin/academies/:academyId/verification
+     */
+    verifyAcademy(req, academyId, dto) {
+        return this.adminService.verifyAcademy(req.user.id, academyId, dto.verificationStatus);
+    }
+    /**
+     * PATCH /api/v1/admin/scouts/:scoutId/verification
+     */
+    verifyScout(req, scoutId, dto) {
+        return this.adminService.verifyScout(req.user.id, scoutId, dto.verificationStatus);
+    }
+    /**
+     * PATCH /api/v1/admin/coaches/:coachId/verification
+     */
+    verifyCoach(req, coachId, dto) {
+        return this.adminService.verifyCoach(req.user.id, coachId, dto.verificationStatus);
+    }
+    // =========================================================
+    // ACHIEVEMENT VERIFICATION
+    // =========================================================
+    /**
+     * PATCH
+     * /api/v1/admin/achievements/:achievementId/verification
+     */
+    verifyAchievement(req, achievementId, dto) {
+        return this.adminService
+            .verifyAchievement(req.user.id, achievementId, dto.verificationStatus);
     }
 };
 __decorate([
-    Patch('players/:playerId/verification'),
-    __param(0, Param('playerId')),
-    __param(1, Body()),
+    Get('verifications/profiles'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, UpdateVerificationDto]),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getPendingProfileVerifications", null);
+__decorate([
+    Get('verifications/achievements'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getPendingAchievementVerifications", null);
+__decorate([
+    Patch('players/:playerId/verification'),
+    __param(0, Req()),
+    __param(1, Param('playerId')),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, UpdateVerificationDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "verifyPlayer", null);
 __decorate([
     Patch('academies/:academyId/verification'),
-    __param(0, Param('academyId')),
-    __param(1, Body()),
+    __param(0, Req()),
+    __param(1, Param('academyId')),
+    __param(2, Body()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, UpdateVerificationDto]),
+    __metadata("design:paramtypes", [Object, String, UpdateVerificationDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "verifyAcademy", null);
 __decorate([
     Patch('scouts/:scoutId/verification'),
-    __param(0, Param('scoutId')),
-    __param(1, Body()),
+    __param(0, Req()),
+    __param(1, Param('scoutId')),
+    __param(2, Body()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, UpdateVerificationDto]),
+    __metadata("design:paramtypes", [Object, String, UpdateVerificationDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "verifyScout", null);
 __decorate([
     Patch('coaches/:coachId/verification'),
-    __param(0, Param('coachId')),
-    __param(1, Body()),
+    __param(0, Req()),
+    __param(1, Param('coachId')),
+    __param(2, Body()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, UpdateVerificationDto]),
+    __metadata("design:paramtypes", [Object, String, UpdateVerificationDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "verifyCoach", null);
+__decorate([
+    Patch('achievements/:achievementId/verification'),
+    __param(0, Req()),
+    __param(1, Param('achievementId')),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, UpdateAchievementVerificationDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "verifyAchievement", null);
 AdminController = __decorate([
     Controller('admin'),
-    UseGuards(JwtAuthGuard, RolesGuard),
+    UseGuards(JwtAuthGuard, PermissionsGuard),
+    Permissions('verification.review'),
     __metadata("design:paramtypes", [AdminService])
 ], AdminController);
 export { AdminController };

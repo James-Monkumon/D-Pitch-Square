@@ -61,15 +61,9 @@ let AcademiesService = class AcademiesService {
      * POST /api/v1/academies
      */
     async createAcademy(userId, dto) {
-        console.log('========== CREATE ACADEMY ==========');
-        console.log('userId:', userId);
-        console.log('dto:', JSON.stringify(dto, null, 2));
-        // Defensive check.
-        // The controller should always provide this from req.user.id.
         if (!userId) {
             throw new ForbiddenException('Authenticated user ID is missing');
         }
-        console.log('1. Finding user...');
         const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -82,59 +76,31 @@ let AcademiesService = class AcademiesService {
                 },
             },
         });
-        console.log('2. User found:', !!user);
         if (!user) {
             throw new NotFoundException('User not found');
         }
-        console.log('3. User roles:', user.roles.map((userRole) => userRole.role.name));
         const isAcademy = user.roles.some((userRole) => userRole.role.name === 'ACADEMY');
-        console.log('4. Is academy:', isAcademy);
         if (!isAcademy) {
             throw new ForbiddenException('Only academy users can create an academy profile');
         }
-        console.log('5. Checking existing academy profile...');
         /*
-         * IMPORTANT:
+         * AcademyProfile.userId is unique.
          *
-         * We intentionally use findUnique({ userId }) without
-         * filtering deletedAt here.
-         *
-         * userId is @unique in Prisma, so there can only ever
-         * be one AcademyProfile row for this user.
-         *
-         * If that row is soft-deleted, we restore it instead
-         * of trying to create another row.
+         * Therefore, if a previous profile exists and was
+         * soft-deleted, restore that same row instead of
+         * attempting to create another one.
          */
         const existingProfile = await this.prisma.academyProfile.findUnique({
             where: {
                 userId,
             },
         });
-        console.log('6. Existing profile:', !!existingProfile);
-        /*
-         * ACTIVE PROFILE
-         *
-         * A non-deleted academy already exists, so creation
-         * must be rejected.
-         */
         if (existingProfile &&
             existingProfile.deletedAt === null) {
             throw new ConflictException('Academy profile already exists');
         }
-        /*
-         * SOFT-DELETED PROFILE
-         *
-         * The user deleted the academy previously.
-         *
-         * Because AcademyProfile.userId is unique, we cannot
-         * create another row with the same userId.
-         *
-         * Instead, restore the existing profile and replace
-         * its profile data with the new DTO.
-         */
         if (existingProfile &&
             existingProfile.deletedAt !== null) {
-            console.log('7. Soft-deleted academy found. Restoring profile...');
             const restoredAcademy = await this.prisma.academyProfile.update({
                 where: {
                     id: existingProfile.id,
@@ -153,24 +119,15 @@ let AcademiesService = class AcademiesService {
                     contactPhone: dto.contactPhone,
                     websiteUrl: dto.websiteUrl,
                     socialMediaLinks: dto.socialMediaLinks,
-                    // Restore the profile.
                     deletedAt: null,
                 },
             });
-            console.log('8. Academy restored:', restoredAcademy.id);
-            console.log('====================================');
             return {
                 success: true,
                 message: 'Academy profile created successfully',
                 data: restoredAcademy,
             };
         }
-        /*
-         * NO EXISTING PROFILE
-         *
-         * This is the normal first-time creation path.
-         */
-        console.log('7. No existing profile. Creating academy profile...');
         const academy = await this.prisma.academyProfile.create({
             data: {
                 userId,
@@ -189,8 +146,6 @@ let AcademiesService = class AcademiesService {
                 socialMediaLinks: dto.socialMediaLinks,
             },
         });
-        console.log('8. Academy created:', academy.id);
-        console.log('====================================');
         return {
             success: true,
             message: 'Academy profile created successfully',
@@ -262,7 +217,7 @@ let AcademiesService = class AcademiesService {
         };
     }
     /**
-     * Get one public academy profile.
+     * Get one academy profile.
      *
      * GET /api/v1/academies/:academyId
      */
@@ -407,6 +362,11 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Add a player to an academy.
+     *
+     * If a previous academy membership exists and was
+     * soft-removed, reactivate the same row.
+     *
+     * POST /api/v1/academies/:academyId/players
      */
     async addAcademyPlayer(userId, academyId, dto) {
         await this.verifyAcademyOwner(userId, academyId);
@@ -493,6 +453,11 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Remove a player from an academy.
+     *
+     * The academy membership and any currently active team
+     * assignments inside this academy are soft-removed.
+     *
+     * DELETE /api/v1/academies/:academyId/players/:playerId
      */
     async removeAcademyPlayer(userId, academyId, playerId) {
         await this.verifyAcademyOwner(userId, academyId);
@@ -504,24 +469,39 @@ let AcademiesService = class AcademiesService {
                 },
             },
         });
-        if (!membership || membership.leftAt) {
+        if (!membership ||
+            membership.leftAt) {
             throw new NotFoundException('Player is not an active member of this academy');
         }
+        const now = new Date();
         await this.prisma.$transaction([
-            this.prisma.academyTeamPlayer.deleteMany({
+            /*
+             * Soft-remove all active team assignments
+             * belonging to this academy.
+             *
+             * Historical team membership rows are preserved.
+             */
+            this.prisma.academyTeamPlayer.updateMany({
                 where: {
                     playerId,
+                    leftAt: null,
                     team: {
                         academyId,
                     },
                 },
+                data: {
+                    leftAt: now,
+                },
             }),
+            /*
+             * Soft-remove the academy-level membership.
+             */
             this.prisma.academyPlayerMembership.update({
                 where: {
                     id: membership.id,
                 },
                 data: {
-                    leftAt: new Date(),
+                    leftAt: now,
                 },
             }),
         ]);
@@ -531,11 +511,14 @@ let AcademiesService = class AcademiesService {
             data: null,
         };
     }
+    // =========================================================
+    // ACADEMY STATISTICS
+    // =========================================================
     /**
-   * Get academy statistics.
-   *
-   * GET /api/v1/academies/:academyId/statistics
-   */
+     * Get academy statistics.
+     *
+     * GET /api/v1/academies/:academyId/statistics
+     */
     async getAcademyStatistics(academyId) {
         await this.getActiveAcademy(academyId);
         const [totalPlayers, totalCoaches, totalTeams, totalFollowers,] = await this.prisma.$transaction([
@@ -573,6 +556,14 @@ let AcademiesService = class AcademiesService {
             },
         };
     }
+    // =========================================================
+    // ACADEMY VERIFICATION
+    // =========================================================
+    /**
+     * Request academy verification.
+     *
+     * POST /api/v1/academies/:academyId/verification/request
+     */
     async requestVerification(userId, academyId) {
         const academy = await this.verifyAcademyOwner(userId, academyId);
         if (academy.verificationStatus === 'PENDING') {
@@ -598,226 +589,13 @@ let AcademiesService = class AcademiesService {
         };
     }
     // =========================================================
-    // TEAM PLAYERS
-    // =========================================================
-    /**
-     * Add a player to a team.
-     *
-     * POST /api/v1/academies/teams/:teamId/players
-     */
-    async addTeamPlayer(userId, teamId, dto) {
-        const team = await this.prisma.academyTeam.findUnique({
-            where: {
-                id: teamId,
-            },
-        });
-        if (!team) {
-            throw new NotFoundException('Team not found');
-        }
-        // Make sure the authenticated user owns
-        // the academy that owns this team.
-        await this.verifyAcademyOwner(userId, team.academyId);
-        // Make sure the player exists.
-        const player = await this.prisma.playerProfile.findUnique({
-            where: {
-                id: dto.playerId,
-            },
-        });
-        if (!player) {
-            throw new NotFoundException('Player profile not found');
-        }
-        // Make sure the player belongs to this academy.
-        const academyMembership = await this.prisma.academyPlayerMembership.findUnique({
-            where: {
-                academyId_playerId: {
-                    academyId: team.academyId,
-                    playerId: dto.playerId,
-                },
-            },
-        });
-        if (!academyMembership ||
-            academyMembership.leftAt) {
-            throw new NotFoundException('Player is not an active member of this academy');
-        }
-        // Check whether the player already has a membership
-        // record for this team.
-        const existing = await this.prisma.academyTeamPlayer.findFirst({
-            where: {
-                teamId,
-                playerId: dto.playerId,
-            },
-        });
-        if (existing) {
-            // Already active.
-            if (!existing.leftAt) {
-                throw new ConflictException('Player is already a member of this team');
-            }
-            // Reactivate previous membership.
-            const reactivated = await this.prisma.academyTeamPlayer.update({
-                where: {
-                    id: existing.id,
-                },
-                data: {
-                    jerseyNumber: dto.jerseyNumber ?? null,
-                    joinedAt: new Date(),
-                    leftAt: null,
-                },
-                select: {
-                    id: true,
-                    teamId: true,
-                    playerId: true,
-                    jerseyNumber: true,
-                    joinedAt: true,
-                    leftAt: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    player: {
-                        select: {
-                            id: true,
-                            fullName: true,
-                            profilePicture: true,
-                            primaryPosition: true,
-                            secondaryPosition: true,
-                            preferredFoot: true,
-                        },
-                    },
-                },
-            });
-            return {
-                success: true,
-                message: 'Player membership reactivated successfully',
-                data: reactivated,
-            };
-        }
-        const membership = await this.prisma.academyTeamPlayer.create({
-            data: {
-                teamId,
-                playerId: dto.playerId,
-                jerseyNumber: dto.jerseyNumber ?? null,
-            },
-            select: {
-                id: true,
-                teamId: true,
-                playerId: true,
-                jerseyNumber: true,
-                joinedAt: true,
-                leftAt: true,
-                createdAt: true,
-                updatedAt: true,
-                player: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        profilePicture: true,
-                        primaryPosition: true,
-                        secondaryPosition: true,
-                        preferredFoot: true,
-                    },
-                },
-            },
-        });
-        return {
-            success: true,
-            message: 'Player added to team successfully',
-            data: membership,
-        };
-    }
-    /**
-     * Get all active players assigned to a team.
-     *
-     * GET /api/v1/academies/teams/:teamId/players
-     */
-    async getTeamPlayers(teamId) {
-        const team = await this.prisma.academyTeam.findUnique({
-            where: {
-                id: teamId,
-            },
-        });
-        if (!team) {
-            throw new NotFoundException('Team not found');
-        }
-        const players = await this.prisma.academyTeamPlayer.findMany({
-            where: {
-                teamId,
-                leftAt: null,
-            },
-            select: {
-                id: true,
-                teamId: true,
-                playerId: true,
-                jerseyNumber: true,
-                joinedAt: true,
-                leftAt: true,
-                createdAt: true,
-                updatedAt: true,
-                player: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        profilePicture: true,
-                        primaryPosition: true,
-                        secondaryPosition: true,
-                        preferredFoot: true,
-                    },
-                },
-            },
-            orderBy: {
-                joinedAt: 'desc',
-            },
-        });
-        return {
-            success: true,
-            message: 'Team players retrieved successfully',
-            data: players,
-        };
-    }
-    /**
-     * Remove a player from a team.
-     *
-     * DELETE /api/v1/academies/teams/:teamId/players/:playerId
-     */
-    async removeTeamPlayer(userId, teamId, playerId) {
-        const team = await this.prisma.academyTeam.findUnique({
-            where: {
-                id: teamId,
-            },
-        });
-        if (!team) {
-            throw new NotFoundException('Team not found');
-        }
-        // Make sure the authenticated user owns
-        // the academy that owns this team.
-        await this.verifyAcademyOwner(userId, team.academyId);
-        const membership = await this.prisma.academyTeamPlayer.findFirst({
-            where: {
-                teamId,
-                playerId,
-                leftAt: null,
-            },
-        });
-        if (!membership) {
-            throw new NotFoundException('Player is not an active member of this team');
-        }
-        await this.prisma.academyTeamPlayer.update({
-            where: {
-                id: membership.id,
-            },
-            data: {
-                leftAt: new Date(),
-            },
-        });
-        return {
-            success: true,
-            message: 'Player removed from team successfully',
-            data: null,
-        };
-    }
-    // =========================================================
     // ACADEMY COACHES
     // =========================================================
     /**
      * Get all active coaches belonging
      * to an academy.
+     *
+     * GET /api/v1/academies/:academyId/coaches
      */
     async getAcademyCoaches(academyId) {
         await this.getActiveAcademy(academyId);
@@ -860,6 +638,11 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Add a coach to an academy.
+     *
+     * If a previous academy membership exists and was
+     * soft-removed, reactivate the same row.
+     *
+     * POST /api/v1/academies/:academyId/coaches
      */
     async addAcademyCoach(userId, academyId, dto) {
         await this.verifyAcademyOwner(userId, academyId);
@@ -948,6 +731,11 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Remove a coach from an academy.
+     *
+     * The academy membership and any active team assignments
+     * in this academy are soft-removed.
+     *
+     * DELETE /api/v1/academies/:academyId/coaches/:coachId
      */
     async removeAcademyCoach(userId, academyId, coachId) {
         await this.verifyAcademyOwner(userId, academyId);
@@ -959,24 +747,37 @@ let AcademiesService = class AcademiesService {
                 },
             },
         });
-        if (!membership || membership.leftAt) {
+        if (!membership ||
+            membership.leftAt) {
             throw new NotFoundException('Coach is not an active member of this academy');
         }
+        const now = new Date();
         await this.prisma.$transaction([
-            this.prisma.academyTeamCoach.deleteMany({
+            /*
+             * Soft-remove all current team assignments
+             * in this academy.
+             */
+            this.prisma.academyTeamCoach.updateMany({
                 where: {
                     coachId,
+                    leftAt: null,
                     team: {
                         academyId,
                     },
                 },
+                data: {
+                    leftAt: now,
+                },
             }),
+            /*
+             * Soft-remove academy-level membership.
+             */
             this.prisma.academyCoachMembership.update({
                 where: {
                     id: membership.id,
                 },
                 data: {
-                    leftAt: new Date(),
+                    leftAt: now,
                 },
             }),
         ]);
@@ -991,6 +792,8 @@ let AcademiesService = class AcademiesService {
     // =========================================================
     /**
      * Follow an academy.
+     *
+     * POST /api/v1/academies/:academyId/follow
      */
     async followAcademy(userId, academyId) {
         const academy = await this.getActiveAcademy(academyId);
@@ -1030,6 +833,8 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Unfollow an academy.
+     *
+     * DELETE /api/v1/academies/:academyId/follow
      */
     async unfollowAcademy(userId, academyId) {
         await this.getActiveAcademy(academyId);
@@ -1068,6 +873,8 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Check whether a user follows an academy.
+     *
+     * GET /api/v1/academies/:academyId/is-following
      */
     async isFollowingAcademy(userId, academyId) {
         await this.getActiveAcademy(academyId);
@@ -1089,6 +896,8 @@ let AcademiesService = class AcademiesService {
     }
     /**
      * Get academy follower count.
+     *
+     * GET /api/v1/academies/:academyId/followers/count
      */
     async getAcademyFollowerCount(academyId) {
         await this.getActiveAcademy(academyId);
@@ -1115,9 +924,6 @@ let AcademiesService = class AcademiesService {
      */
     async likeAcademy(userId, academyId) {
         const academy = await this.getActiveAcademy(academyId);
-        /**
-         * An academy cannot like itself.
-         */
         if (academy.userId === userId) {
             throw new ForbiddenException('You cannot like your own academy profile');
         }
@@ -1217,8 +1023,7 @@ let AcademiesService = class AcademiesService {
         };
     }
     /**
-     * Get total number of likes
-     * for an academy.
+     * Get total number of likes for an academy.
      *
      * GET /api/v1/academies/:academyId/likes/count
      */

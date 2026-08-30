@@ -10,14 +10,16 @@ export declare class PlayersController {
     /**
      * Create or restore my player profile.
      *
-     * POST /players/profile
+     * POST /api/v1/players/profile
      */
     createProfile(req: any, dto: CreatePlayerDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -39,15 +41,13 @@ export declare class PlayersController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
     /**
      * Get my player profile.
      *
-     * GET /players/profile
+     * GET /api/v1/players/profile
      */
     getMyProfile(req: any): Promise<{
         success: boolean;
@@ -70,25 +70,27 @@ export declare class PlayersController {
             } | null;
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -110,15 +112,13 @@ export declare class PlayersController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
     /**
      * Explicit /me alias.
      *
-     * GET /players/profile/me
+     * GET /api/v1/players/profile/me
      */
     getMyProfileMe(req: any): Promise<{
         success: boolean;
@@ -141,25 +141,27 @@ export declare class PlayersController {
             } | null;
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -181,22 +183,22 @@ export declare class PlayersController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
     /**
      * Update my player profile.
      *
-     * PATCH /players/profile
+     * PATCH /api/v1/players/profile
      */
     updateProfile(req: any, dto: UpdatePlayerDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -218,15 +220,13 @@ export declare class PlayersController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
     /**
      * Soft-delete my player profile.
      *
-     * DELETE /players/profile
+     * DELETE /api/v1/players/profile
      */
     deleteProfile(req: any): Promise<{
         success: boolean;
@@ -234,9 +234,24 @@ export declare class PlayersController {
         data: null;
     }>;
     /**
+     * Submit my player profile for admin verification.
+     *
+     * POST /api/v1/players/profile/verification
+     */
+    submitProfileForVerification(req: any): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            updatedAt: Date;
+            fullName: string;
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+        };
+    }>;
+    /**
      * Create/update player statistics.
      *
-     * PATCH /players/statistics
+     * PATCH /api/v1/players/statistics
      */
     updateStatistics(req: any, dto: UpdatePlayerStatisticsDto): Promise<{
         success: boolean;
@@ -260,88 +275,90 @@ export declare class PlayersController {
     /**
      * Create player achievement.
      *
-     * POST /players/achievements
+     * POST /api/v1/players/achievements
      */
     createAchievement(req: any, dto: CreateAchievementDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     /**
      * Get all my achievements.
      *
-     * GET /players/achievements
+     * GET /api/v1/players/achievements
      */
     getMyAchievements(req: any): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         }[];
     }>;
     /**
      * Update one of my achievements.
      *
-     * PATCH /players/achievements/:achievementId
+     * PATCH
+     * /api/v1/players/achievements/:achievementId
      */
     updateAchievement(req: any, achievementId: string, dto: UpdateAchievementDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     /**
      * Delete one of my achievements.
      *
-     * DELETE /players/achievements/:achievementId
+     * DELETE
+     * /api/v1/players/achievements/:achievementId
      */
     deleteAchievement(req: any, achievementId: string): Promise<{
         success: boolean;
@@ -349,9 +366,38 @@ export declare class PlayersController {
         data: null;
     }>;
     /**
+     * Submit one of my achievements
+     * for admin verification.
+     *
+     * POST
+     * /api/v1/players/achievements/:achievementId/verification
+     */
+    submitAchievementForVerification(req: any, achievementId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            createdAt: Date;
+            role: string | null;
+            description: string | null;
+            updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
+            ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
+            playerId: string | null;
+            title: string;
+            achievementType: import("@prisma/client").$Enums.AchievementType;
+            achievementDate: Date | null;
+            organization: string | null;
+            level: string | null;
+            evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
+        };
+    }>;
+    /**
      * Follow player.
      *
-     * POST /players/:playerId/follow
+     * POST /api/v1/players/:playerId/follow
      */
     followPlayer(req: any, playerId: string): Promise<{
         success: boolean;
@@ -363,7 +409,7 @@ export declare class PlayersController {
     /**
      * Unfollow player.
      *
-     * DELETE /players/:playerId/follow
+     * DELETE /api/v1/players/:playerId/follow
      */
     unfollowPlayer(req: any, playerId: string): Promise<{
         success: boolean;
@@ -375,7 +421,7 @@ export declare class PlayersController {
     /**
      * Check follow status.
      *
-     * GET /players/:playerId/follow
+     * GET /api/v1/players/:playerId/follow
      */
     isFollowingPlayer(req: any, playerId: string): Promise<{
         success: boolean;
@@ -387,7 +433,8 @@ export declare class PlayersController {
     /**
      * Get follower count.
      *
-     * GET /players/:playerId/followers/count
+     * GET
+     * /api/v1/players/:playerId/followers/count
      */
     getPlayerFollowerCount(playerId: string): Promise<{
         success: boolean;
@@ -399,7 +446,7 @@ export declare class PlayersController {
     /**
      * Like player.
      *
-     * POST /players/:playerId/like
+     * POST /api/v1/players/:playerId/like
      */
     likePlayer(req: any, playerId: string): Promise<{
         success: boolean;
@@ -411,7 +458,7 @@ export declare class PlayersController {
     /**
      * Unlike player.
      *
-     * DELETE /players/:playerId/like
+     * DELETE /api/v1/players/:playerId/like
      */
     unlikePlayer(req: any, playerId: string): Promise<{
         success: boolean;
@@ -423,7 +470,7 @@ export declare class PlayersController {
     /**
      * Check like status.
      *
-     * GET /players/:playerId/like
+     * GET /api/v1/players/:playerId/like
      */
     isPlayerLiked(req: any, playerId: string): Promise<{
         success: boolean;
@@ -435,7 +482,8 @@ export declare class PlayersController {
     /**
      * Get total player likes.
      *
-     * GET /players/:playerId/likes/count
+     * GET
+     * /api/v1/players/:playerId/likes/count
      */
     getPlayerLikesCount(playerId: string): Promise<{
         success: boolean;
@@ -447,10 +495,9 @@ export declare class PlayersController {
     /**
      * Get public player profile.
      *
-     * Keep this generic parameter route
-     * at the bottom of the controller.
+     * Keep this generic route at the bottom.
      *
-     * GET /players/:playerId
+     * GET /api/v1/players/:playerId
      */
     getPlayerById(playerId: string): Promise<{
         success: boolean;
@@ -475,24 +522,26 @@ export declare class PlayersController {
             } | null;
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -514,8 +563,6 @@ export declare class PlayersController {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;

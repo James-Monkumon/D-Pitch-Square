@@ -36,7 +36,9 @@ export declare class PlayersService {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -58,8 +60,6 @@ export declare class PlayersService {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
@@ -87,25 +87,27 @@ export declare class PlayersService {
             } | null;
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
         } & {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -127,8 +129,6 @@ export declare class PlayersService {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
@@ -140,7 +140,9 @@ export declare class PlayersService {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -162,8 +164,6 @@ export declare class PlayersService {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;
@@ -174,6 +174,23 @@ export declare class PlayersService {
         success: boolean;
         message: string;
         data: null;
+    }>;
+    /**
+     * Submit player profile for admin verification.
+     *
+     * Allowed:
+     * NOT_REQUESTED -> PENDING
+     * REJECTED      -> PENDING
+     */
+    submitProfileForVerification(userId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            updatedAt: Date;
+            fullName: string;
+            verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
+        };
     }>;
     /**
      * Create/update player statistics.
@@ -205,21 +222,21 @@ export declare class PlayersService {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     /**
@@ -230,21 +247,21 @@ export declare class PlayersService {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         }[];
     }>;
     /**
@@ -255,21 +272,21 @@ export declare class PlayersService {
         message: string;
         data: {
             id: string;
-            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             createdAt: Date;
+            role: string | null;
+            description: string | null;
             updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
             ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
             playerId: string | null;
-            coachId: string | null;
-            scoutId: string | null;
             title: string;
-            description: string | null;
             achievementType: import("@prisma/client").$Enums.AchievementType;
             achievementDate: Date | null;
             organization: string | null;
             level: string | null;
-            role: string | null;
             evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
         };
     }>;
     /**
@@ -279,6 +296,35 @@ export declare class PlayersService {
         success: boolean;
         message: string;
         data: null;
+    }>;
+    /**
+     * Submit one of my achievements for verification.
+     *
+     * Allowed:
+     * UNVERIFIED -> PENDING
+     * REJECTED   -> PENDING
+     */
+    submitAchievementForVerification(userId: string, achievementId: string): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            createdAt: Date;
+            role: string | null;
+            description: string | null;
+            updatedAt: Date;
+            verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
+            ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
+            playerId: string | null;
+            title: string;
+            achievementType: import("@prisma/client").$Enums.AchievementType;
+            achievementDate: Date | null;
+            organization: string | null;
+            level: string | null;
+            evidenceUrl: string | null;
+            coachId: string | null;
+            scoutId: string | null;
+        };
     }>;
     /**
      * Follow a player.
@@ -386,24 +432,26 @@ export declare class PlayersService {
             } | null;
             achievements: {
                 id: string;
-                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 createdAt: Date;
+                role: string | null;
+                description: string | null;
                 updatedAt: Date;
+                verificationStatus: import("@prisma/client").$Enums.AchievementVerificationStatus;
                 ownerType: import("@prisma/client").$Enums.AchievementOwnerType;
                 playerId: string | null;
-                coachId: string | null;
-                scoutId: string | null;
                 title: string;
-                description: string | null;
                 achievementType: import("@prisma/client").$Enums.AchievementType;
                 achievementDate: Date | null;
                 organization: string | null;
                 level: string | null;
-                role: string | null;
                 evidenceUrl: string | null;
+                coachId: string | null;
+                scoutId: string | null;
             }[];
             id: string;
+            createdAt: Date;
             userId: string;
+            updatedAt: Date;
             profilePicture: string | null;
             coverPhoto: string | null;
             fullName: string;
@@ -425,8 +473,6 @@ export declare class PlayersService {
             contactInformation: string | null;
             socialMediaLinks: import("@prisma/client/runtime/library").JsonValue | null;
             verificationStatus: import("@prisma/client").$Enums.VerificationStatus;
-            createdAt: Date;
-            updatedAt: Date;
             deletedAt: Date | null;
         };
     }>;

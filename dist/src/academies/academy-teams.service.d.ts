@@ -12,30 +12,66 @@ export declare class AcademyTeamsService {
      */
     private verifyAcademyOwner;
     /**
-     * Make sure a team belongs to the academy.
+     * Make sure a team belongs to the academy,
+     * the academy is active,
+     * and the team has not been soft-deleted.
      */
     private findTeam;
     /**
-     * Create a team.
+     * Normalize a team name before comparing or storing it.
+     */
+    private normalizeTeamName;
+    /**
+     * Translate PostgreSQL/Prisma unique-constraint failures
+     * into a friendly HTTP 409 response.
+     *
+     * This is the final protection for race conditions where
+     * two requests attempt to create/reactivate/rename teams
+     * to the same active normalized name simultaneously.
+     */
+    private handleTeamNameUniqueConstraint;
+    /**
+     * Create or reactivate a team.
+     *
+     * Behavior:
+     *
+     * 1. If an ACTIVE team with the same name already exists,
+     *    reject with 409 Conflict.
+     *
+     * 2. If a SOFT-DELETED team with the same name exists,
+     *    reactivate that same team row.
+     *
+     * 3. Otherwise create a brand-new team.
+     *
+     * Reactivating a team DOES NOT automatically reactivate
+     * its previous player or coach memberships.
+     *
+     * POST /api/v1/academies/:academyId/teams
      */
     createTeam(userId: string, academyId: string, dto: CreateTeamDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
     }>;
     /**
-     * Get all teams belonging to an academy.
+     * Get all active teams belonging to an academy.
      *
-     * Public endpoint.
+     * Soft-deleted teams are excluded.
+     *
+     * Only active player/coach memberships
+     * are included in relationship counts.
+     *
+     * GET /api/v1/academies/:academyId/teams
      */
     getTeams(academyId: string): Promise<{
         success: boolean;
@@ -47,19 +83,25 @@ export declare class AcademyTeamsService {
             };
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         })[];
     }>;
     /**
-     * Get one team.
+     * Get one active team.
      *
-     * Public endpoint.
+     * Soft-deleted teams are treated as not found.
+     *
+     * Only active players and coaches
+     * are returned in the current roster.
+     *
+     * GET /api/v1/academies/:academyId/teams/:teamId
      */
     getTeam(academyId: string, teamId: string): Promise<{
         success: boolean;
@@ -67,16 +109,19 @@ export declare class AcademyTeamsService {
         data: {
             players: {
                 id: string;
-                jerseyNumber: number | null;
+                leftAt: Date | null;
                 playerId: string;
+                jerseyNumber: number | null;
+                joinedAt: Date;
                 player: {
                     id: string;
-                    profilePicture: string | null;
-                    fullName: string;
-                    nationality: string | null;
                     country: string | null;
                     state: string | null;
                     city: string | null;
+                    jerseyNumber: number | null;
+                    profilePicture: string | null;
+                    fullName: string;
+                    nationality: string | null;
                     currentClub: string | null;
                     currentAcademyName: string | null;
                     height: number | null;
@@ -84,61 +129,77 @@ export declare class AcademyTeamsService {
                     preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                     primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                     secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-                    jerseyNumber: number | null;
                 };
-                joinedAt: Date;
-                leftAt: Date | null;
             }[];
             coaches: {
                 id: string;
+                leftAt: Date | null;
+                joinedAt: Date;
                 coachId: string;
                 role: string | null;
                 coach: {
                     id: string;
-                    profilePicture: string | null;
-                    fullName: string;
                     country: string | null;
                     state: string | null;
                     city: string | null;
+                    profilePicture: string | null;
+                    fullName: string;
                     currentAcademyClub: string | null;
                     coachingRole: string | null;
                     coachingLicense: string | null;
                     coachingCertification: string | null;
                     yearsOfExperience: number | null;
                 };
-                joinedAt: Date;
-                leftAt: Date | null;
             }[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
     }>;
     /**
-     * Update a team.
+     * Update an active team.
+     *
+     * Soft-deleted teams cannot be updated.
+     *
+     * Renaming to another active team's name
+     * is rejected.
+     *
+     * PATCH /api/v1/academies/:academyId/teams/:teamId
      */
     updateTeam(userId: string, academyId: string, teamId: string, dto: UpdateTeamDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
     }>;
     /**
-     * Delete a team.
+     * Soft-delete a team.
+     *
+     * The team row is preserved by setting deletedAt.
+     *
+     * Every currently active player and coach membership
+     * belonging to the team is closed using the same
+     * timestamp.
+     *
+     * Historical membership rows remain in the database.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId
      */
     deleteTeam(userId: string, academyId: string, teamId: string): Promise<{
         success: boolean;
@@ -146,36 +207,44 @@ export declare class AcademyTeamsService {
         data: null;
     }>;
     /**
-     * Add a player to a team.
+     * Add a player to an active team.
      *
-     * The player must already belong to the academy.
+     * Player must already be an active
+     * academy member.
+     *
+     * If the player previously belonged to the team
+     * and was removed, the historical membership row
+     * is reactivated.
+     *
+     * POST /api/v1/academies/:academyId/teams/:teamId/players
      */
     addPlayer(userId: string, academyId: string, teamId: string, dto: AddTeamPlayerDto): Promise<{
         success: boolean;
         message: string;
         data: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            leftAt: Date | null;
+            teamId: string;
+            playerId: string;
+            jerseyNumber: number | null;
+            joinedAt: Date;
             player: {
                 id: string;
+                jerseyNumber: number | null;
                 profilePicture: string | null;
                 fullName: string;
                 preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                 primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                 secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-                jerseyNumber: number | null;
             };
-        } & {
-            id: string;
-            jerseyNumber: number | null;
-            createdAt: Date;
-            updatedAt: Date;
-            playerId: string;
-            joinedAt: Date;
-            leftAt: Date | null;
-            teamId: string;
         };
     }>;
     /**
-     * Remove a player from a team.
+     * Soft-remove a player from an active team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId/players/:playerId
      */
     removePlayer(userId: string, academyId: string, teamId: string, playerId: string): Promise<{
         success: boolean;
@@ -183,14 +252,28 @@ export declare class AcademyTeamsService {
         data: null;
     }>;
     /**
-     * Add a coach to a team.
+     * Add a coach to an active team.
      *
-     * The coach must already belong to the academy.
+     * Coach must already be an active
+     * academy member.
+     *
+     * Historical membership is reactivated
+     * instead of creating a duplicate.
+     *
+     * POST /api/v1/academies/:academyId/teams/:teamId/coaches
      */
     addCoach(userId: string, academyId: string, teamId: string, dto: AddTeamCoachDto): Promise<{
         success: boolean;
         message: string;
         data: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            leftAt: Date | null;
+            teamId: string;
+            joinedAt: Date;
+            coachId: string;
+            role: string | null;
             coach: {
                 id: string;
                 profilePicture: string | null;
@@ -199,19 +282,12 @@ export declare class AcademyTeamsService {
                 coachingRole: string | null;
                 yearsOfExperience: number | null;
             };
-        } & {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            coachId: string;
-            role: string | null;
-            joinedAt: Date;
-            leftAt: Date | null;
-            teamId: string;
         };
     }>;
     /**
-     * Remove a coach from a team.
+     * Soft-remove a coach from an active team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId/coaches/:coachId
      */
     removeCoach(userId: string, academyId: string, teamId: string, coachId: string): Promise<{
         success: boolean;

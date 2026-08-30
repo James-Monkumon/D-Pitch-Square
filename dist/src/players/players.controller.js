@@ -29,7 +29,7 @@ let PlayersController = class PlayersController {
     /**
      * Create or restore my player profile.
      *
-     * POST /players/profile
+     * POST /api/v1/players/profile
      */
     async createProfile(req, dto) {
         return this.playersService.createProfile(req.user.id, dto);
@@ -37,7 +37,7 @@ let PlayersController = class PlayersController {
     /**
      * Get my player profile.
      *
-     * GET /players/profile
+     * GET /api/v1/players/profile
      */
     async getMyProfile(req) {
         return this.playersService.getMyProfile(req.user.id);
@@ -45,7 +45,7 @@ let PlayersController = class PlayersController {
     /**
      * Explicit /me alias.
      *
-     * GET /players/profile/me
+     * GET /api/v1/players/profile/me
      */
     async getMyProfileMe(req) {
         return this.playersService.getMyProfile(req.user.id);
@@ -53,7 +53,7 @@ let PlayersController = class PlayersController {
     /**
      * Update my player profile.
      *
-     * PATCH /players/profile
+     * PATCH /api/v1/players/profile
      */
     async updateProfile(req, dto) {
         return this.playersService.updateProfile(req.user.id, dto);
@@ -61,10 +61,22 @@ let PlayersController = class PlayersController {
     /**
      * Soft-delete my player profile.
      *
-     * DELETE /players/profile
+     * DELETE /api/v1/players/profile
      */
     async deleteProfile(req) {
         return this.playersService.deleteProfile(req.user.id);
+    }
+    // =========================================================
+    // PLAYER PROFILE VERIFICATION
+    // =========================================================
+    /**
+     * Submit my player profile for admin verification.
+     *
+     * POST /api/v1/players/profile/verification
+     */
+    async submitProfileForVerification(req) {
+        return this.playersService
+            .submitProfileForVerification(req.user.id);
     }
     // =========================================================
     // PLAYER STATISTICS
@@ -72,7 +84,7 @@ let PlayersController = class PlayersController {
     /**
      * Create/update player statistics.
      *
-     * PATCH /players/statistics
+     * PATCH /api/v1/players/statistics
      */
     async updateStatistics(req, dto) {
         return this.playersService.updateStatistics(req.user.id, dto);
@@ -83,7 +95,7 @@ let PlayersController = class PlayersController {
     /**
      * Create player achievement.
      *
-     * POST /players/achievements
+     * POST /api/v1/players/achievements
      */
     async createAchievement(req, dto) {
         return this.playersService.createAchievement(req.user.id, dto);
@@ -91,7 +103,7 @@ let PlayersController = class PlayersController {
     /**
      * Get all my achievements.
      *
-     * GET /players/achievements
+     * GET /api/v1/players/achievements
      */
     async getMyAchievements(req) {
         return this.playersService.getMyAchievements(req.user.id);
@@ -99,7 +111,8 @@ let PlayersController = class PlayersController {
     /**
      * Update one of my achievements.
      *
-     * PATCH /players/achievements/:achievementId
+     * PATCH
+     * /api/v1/players/achievements/:achievementId
      */
     async updateAchievement(req, achievementId, dto) {
         return this.playersService.updateAchievement(req.user.id, achievementId, dto);
@@ -107,10 +120,25 @@ let PlayersController = class PlayersController {
     /**
      * Delete one of my achievements.
      *
-     * DELETE /players/achievements/:achievementId
+     * DELETE
+     * /api/v1/players/achievements/:achievementId
      */
     async deleteAchievement(req, achievementId) {
         return this.playersService.deleteAchievement(req.user.id, achievementId);
+    }
+    // =========================================================
+    // PLAYER ACHIEVEMENT VERIFICATION
+    // =========================================================
+    /**
+     * Submit one of my achievements
+     * for admin verification.
+     *
+     * POST
+     * /api/v1/players/achievements/:achievementId/verification
+     */
+    async submitAchievementForVerification(req, achievementId) {
+        return this.playersService
+            .submitAchievementForVerification(req.user.id, achievementId);
     }
     // =========================================================
     // PLAYER FOLLOW
@@ -118,7 +146,7 @@ let PlayersController = class PlayersController {
     /**
      * Follow player.
      *
-     * POST /players/:playerId/follow
+     * POST /api/v1/players/:playerId/follow
      */
     async followPlayer(req, playerId) {
         return this.playersService.followPlayer(req.user.id, playerId);
@@ -126,7 +154,7 @@ let PlayersController = class PlayersController {
     /**
      * Unfollow player.
      *
-     * DELETE /players/:playerId/follow
+     * DELETE /api/v1/players/:playerId/follow
      */
     async unfollowPlayer(req, playerId) {
         return this.playersService.unfollowPlayer(req.user.id, playerId);
@@ -134,18 +162,21 @@ let PlayersController = class PlayersController {
     /**
      * Check follow status.
      *
-     * GET /players/:playerId/follow
+     * GET /api/v1/players/:playerId/follow
      */
     async isFollowingPlayer(req, playerId) {
-        return this.playersService.isFollowingPlayer(req.user.id, playerId);
+        return this.playersService
+            .isFollowingPlayer(req.user.id, playerId);
     }
     /**
      * Get follower count.
      *
-     * GET /players/:playerId/followers/count
+     * GET
+     * /api/v1/players/:playerId/followers/count
      */
     async getPlayerFollowerCount(playerId) {
-        return this.playersService.getPlayerFollowerCount(playerId);
+        return this.playersService
+            .getPlayerFollowerCount(playerId);
     }
     // =========================================================
     // PLAYER LIKE
@@ -153,7 +184,7 @@ let PlayersController = class PlayersController {
     /**
      * Like player.
      *
-     * POST /players/:playerId/like
+     * POST /api/v1/players/:playerId/like
      */
     async likePlayer(req, playerId) {
         return this.playersService.likePlayer(req.user.id, playerId);
@@ -161,7 +192,7 @@ let PlayersController = class PlayersController {
     /**
      * Unlike player.
      *
-     * DELETE /players/:playerId/like
+     * DELETE /api/v1/players/:playerId/like
      */
     async unlikePlayer(req, playerId) {
         return this.playersService.unlikePlayer(req.user.id, playerId);
@@ -169,7 +200,7 @@ let PlayersController = class PlayersController {
     /**
      * Check like status.
      *
-     * GET /players/:playerId/like
+     * GET /api/v1/players/:playerId/like
      */
     async isPlayerLiked(req, playerId) {
         return this.playersService.isPlayerLiked(req.user.id, playerId);
@@ -177,10 +208,12 @@ let PlayersController = class PlayersController {
     /**
      * Get total player likes.
      *
-     * GET /players/:playerId/likes/count
+     * GET
+     * /api/v1/players/:playerId/likes/count
      */
     async getPlayerLikesCount(playerId) {
-        return this.playersService.getPlayerLikesCount(playerId);
+        return this.playersService
+            .getPlayerLikesCount(playerId);
     }
     // =========================================================
     // PUBLIC PLAYER PROFILE
@@ -188,10 +221,9 @@ let PlayersController = class PlayersController {
     /**
      * Get public player profile.
      *
-     * Keep this generic parameter route
-     * at the bottom of the controller.
+     * Keep this generic route at the bottom.
      *
-     * GET /players/:playerId
+     * GET /api/v1/players/:playerId
      */
     async getPlayerById(playerId) {
         return this.playersService.getPlayerById(playerId);
@@ -240,6 +272,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "deleteProfile", null);
 __decorate([
+    Post('profile/verification'),
+    UseGuards(JwtAuthGuard),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PlayersController.prototype, "submitProfileForVerification", null);
+__decorate([
     Patch('statistics'),
     UseGuards(JwtAuthGuard),
     __param(0, Req()),
@@ -284,6 +324,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "deleteAchievement", null);
+__decorate([
+    Post('achievements/:achievementId/verification'),
+    UseGuards(JwtAuthGuard),
+    __param(0, Req()),
+    __param(1, Param('achievementId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], PlayersController.prototype, "submitAchievementForVerification", null);
 __decorate([
     Post(':playerId/follow'),
     UseGuards(JwtAuthGuard),

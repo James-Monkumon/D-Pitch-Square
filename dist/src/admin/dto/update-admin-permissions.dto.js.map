@@ -1,0 +1,1 @@
+{"version":3,"file":"update-admin-permissions.dto.js","sourceRoot":"","sources":["../../../../src/admin/dto/update-admin-permissions.dto.ts"],"names":[],"mappings":";;;;;;;;;AAAA,OAAO,EACL,WAAW,EACX,OAAO,EACP,QAAQ,GACT,MAAM,iBAAiB,CAAC;AAEzB,MAAM,OAAO,yBAAyB;IAIpC,WAAW,CAAY;CACxB;AADC;IAHC,OAAO,EAAE;IACT,WAAW,EAAE;IACb,QAAQ,CAAC,EAAE,IAAI,EAAE,IAAI,EAAE,CAAC;;8DACF"}

@@ -33,7 +33,7 @@ export class PlayersController {
   /**
    * Create or restore my player profile.
    *
-   * POST /players/profile
+   * POST /api/v1/players/profile
    */
   @Post('profile')
   @UseGuards(JwtAuthGuard)
@@ -50,7 +50,7 @@ export class PlayersController {
   /**
    * Get my player profile.
    *
-   * GET /players/profile
+   * GET /api/v1/players/profile
    */
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -65,7 +65,7 @@ export class PlayersController {
   /**
    * Explicit /me alias.
    *
-   * GET /players/profile/me
+   * GET /api/v1/players/profile/me
    */
   @Get('profile/me')
   @UseGuards(JwtAuthGuard)
@@ -80,7 +80,7 @@ export class PlayersController {
   /**
    * Update my player profile.
    *
-   * PATCH /players/profile
+   * PATCH /api/v1/players/profile
    */
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
@@ -97,7 +97,7 @@ export class PlayersController {
   /**
    * Soft-delete my player profile.
    *
-   * DELETE /players/profile
+   * DELETE /api/v1/players/profile
    */
   @Delete('profile')
   @UseGuards(JwtAuthGuard)
@@ -110,13 +110,33 @@ export class PlayersController {
   }
 
   // =========================================================
+  // PLAYER PROFILE VERIFICATION
+  // =========================================================
+
+  /**
+   * Submit my player profile for admin verification.
+   *
+   * POST /api/v1/players/profile/verification
+   */
+  @Post('profile/verification')
+  @UseGuards(JwtAuthGuard)
+  async submitProfileForVerification(
+    @Req() req: any,
+  ) {
+    return this.playersService
+      .submitProfileForVerification(
+        req.user.id,
+      );
+  }
+
+  // =========================================================
   // PLAYER STATISTICS
   // =========================================================
 
   /**
    * Create/update player statistics.
    *
-   * PATCH /players/statistics
+   * PATCH /api/v1/players/statistics
    */
   @Patch('statistics')
   @UseGuards(JwtAuthGuard)
@@ -137,7 +157,7 @@ export class PlayersController {
   /**
    * Create player achievement.
    *
-   * POST /players/achievements
+   * POST /api/v1/players/achievements
    */
   @Post('achievements')
   @UseGuards(JwtAuthGuard)
@@ -154,7 +174,7 @@ export class PlayersController {
   /**
    * Get all my achievements.
    *
-   * GET /players/achievements
+   * GET /api/v1/players/achievements
    */
   @Get('achievements')
   @UseGuards(JwtAuthGuard)
@@ -169,14 +189,19 @@ export class PlayersController {
   /**
    * Update one of my achievements.
    *
-   * PATCH /players/achievements/:achievementId
+   * PATCH
+   * /api/v1/players/achievements/:achievementId
    */
-  @Patch('achievements/:achievementId')
+  @Patch(
+    'achievements/:achievementId',
+  )
   @UseGuards(JwtAuthGuard)
   async updateAchievement(
     @Req() req: any,
+
     @Param('achievementId')
     achievementId: string,
+
     @Body()
     dto: UpdateAchievementDto,
   ) {
@@ -190,12 +215,16 @@ export class PlayersController {
   /**
    * Delete one of my achievements.
    *
-   * DELETE /players/achievements/:achievementId
+   * DELETE
+   * /api/v1/players/achievements/:achievementId
    */
-  @Delete('achievements/:achievementId')
+  @Delete(
+    'achievements/:achievementId',
+  )
   @UseGuards(JwtAuthGuard)
   async deleteAchievement(
     @Req() req: any,
+
     @Param('achievementId')
     achievementId: string,
   ) {
@@ -206,18 +235,47 @@ export class PlayersController {
   }
 
   // =========================================================
+  // PLAYER ACHIEVEMENT VERIFICATION
+  // =========================================================
+
+  /**
+   * Submit one of my achievements
+   * for admin verification.
+   *
+   * POST
+   * /api/v1/players/achievements/:achievementId/verification
+   */
+  @Post(
+    'achievements/:achievementId/verification',
+  )
+  @UseGuards(JwtAuthGuard)
+  async submitAchievementForVerification(
+    @Req() req: any,
+
+    @Param('achievementId')
+    achievementId: string,
+  ) {
+    return this.playersService
+      .submitAchievementForVerification(
+        req.user.id,
+        achievementId,
+      );
+  }
+
+  // =========================================================
   // PLAYER FOLLOW
   // =========================================================
 
   /**
    * Follow player.
    *
-   * POST /players/:playerId/follow
+   * POST /api/v1/players/:playerId/follow
    */
   @Post(':playerId/follow')
   @UseGuards(JwtAuthGuard)
   async followPlayer(
     @Req() req: any,
+
     @Param('playerId')
     playerId: string,
   ) {
@@ -230,12 +288,13 @@ export class PlayersController {
   /**
    * Unfollow player.
    *
-   * DELETE /players/:playerId/follow
+   * DELETE /api/v1/players/:playerId/follow
    */
   @Delete(':playerId/follow')
   @UseGuards(JwtAuthGuard)
   async unfollowPlayer(
     @Req() req: any,
+
     @Param('playerId')
     playerId: string,
   ) {
@@ -248,34 +307,40 @@ export class PlayersController {
   /**
    * Check follow status.
    *
-   * GET /players/:playerId/follow
+   * GET /api/v1/players/:playerId/follow
    */
   @Get(':playerId/follow')
   @UseGuards(JwtAuthGuard)
   async isFollowingPlayer(
     @Req() req: any,
+
     @Param('playerId')
     playerId: string,
   ) {
-    return this.playersService.isFollowingPlayer(
-      req.user.id,
-      playerId,
-    );
+    return this.playersService
+      .isFollowingPlayer(
+        req.user.id,
+        playerId,
+      );
   }
 
   /**
    * Get follower count.
    *
-   * GET /players/:playerId/followers/count
+   * GET
+   * /api/v1/players/:playerId/followers/count
    */
-  @Get(':playerId/followers/count')
+  @Get(
+    ':playerId/followers/count',
+  )
   async getPlayerFollowerCount(
     @Param('playerId')
     playerId: string,
   ) {
-    return this.playersService.getPlayerFollowerCount(
-      playerId,
-    );
+    return this.playersService
+      .getPlayerFollowerCount(
+        playerId,
+      );
   }
 
   // =========================================================
@@ -285,12 +350,13 @@ export class PlayersController {
   /**
    * Like player.
    *
-   * POST /players/:playerId/like
+   * POST /api/v1/players/:playerId/like
    */
   @Post(':playerId/like')
   @UseGuards(JwtAuthGuard)
   async likePlayer(
     @Req() req: any,
+
     @Param('playerId')
     playerId: string,
   ) {
@@ -303,12 +369,13 @@ export class PlayersController {
   /**
    * Unlike player.
    *
-   * DELETE /players/:playerId/like
+   * DELETE /api/v1/players/:playerId/like
    */
   @Delete(':playerId/like')
   @UseGuards(JwtAuthGuard)
   async unlikePlayer(
     @Req() req: any,
+
     @Param('playerId')
     playerId: string,
   ) {
@@ -321,12 +388,13 @@ export class PlayersController {
   /**
    * Check like status.
    *
-   * GET /players/:playerId/like
+   * GET /api/v1/players/:playerId/like
    */
   @Get(':playerId/like')
   @UseGuards(JwtAuthGuard)
   async isPlayerLiked(
     @Req() req: any,
+
     @Param('playerId')
     playerId: string,
   ) {
@@ -339,16 +407,20 @@ export class PlayersController {
   /**
    * Get total player likes.
    *
-   * GET /players/:playerId/likes/count
+   * GET
+   * /api/v1/players/:playerId/likes/count
    */
-  @Get(':playerId/likes/count')
+  @Get(
+    ':playerId/likes/count',
+  )
   async getPlayerLikesCount(
     @Param('playerId')
     playerId: string,
   ) {
-    return this.playersService.getPlayerLikesCount(
-      playerId,
-    );
+    return this.playersService
+      .getPlayerLikesCount(
+        playerId,
+      );
   }
 
   // =========================================================
@@ -358,10 +430,9 @@ export class PlayersController {
   /**
    * Get public player profile.
    *
-   * Keep this generic parameter route
-   * at the bottom of the controller.
+   * Keep this generic route at the bottom.
    *
-   * GET /players/:playerId
+   * GET /api/v1/players/:playerId
    */
   @Get(':playerId')
   async getPlayerById(

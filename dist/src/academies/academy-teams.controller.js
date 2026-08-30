@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards, } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards, } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { AcademyTeamsService } from './academy-teams.service.js';
 import { AddTeamCoachDto } from './dto/add-team-coach.dto.js';
@@ -23,15 +23,17 @@ let AcademyTeamsController = class AcademyTeamsController {
         this.teams = teams;
     }
     /**
-     * Create a team.
+     * Create team.
+     *
+     * POST /api/v1/academies/:academyId/teams
      */
     createTeam(req, academyId, dto) {
-        return this.teams.createTeam(req.user.sub, academyId, dto);
+        return this.teams.createTeam(req.user.id, academyId, dto);
     }
     /**
-     * Get all teams belonging to an academy.
+     * Get academy teams.
      *
-     * Public endpoint.
+     * GET /api/v1/academies/:academyId/teams
      */
     getTeams(academyId) {
         return this.teams.getTeams(academyId);
@@ -39,53 +41,71 @@ let AcademyTeamsController = class AcademyTeamsController {
     /**
      * Get one team.
      *
-     * Public endpoint.
+     * GET /api/v1/academies/:academyId/teams/:teamId
      */
     getTeam(academyId, teamId) {
         return this.teams.getTeam(academyId, teamId);
     }
     /**
-     * Update a team.
+     * Update team.
+     *
+     * PATCH /api/v1/academies/:academyId/teams/:teamId
      */
     updateTeam(req, academyId, teamId, dto) {
-        return this.teams.updateTeam(req.user.sub, academyId, teamId, dto);
+        return this.teams.updateTeam(req.user.id, academyId, teamId, dto);
     }
     /**
-     * Delete a team.
+     * Delete team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId
      */
     deleteTeam(req, academyId, teamId) {
-        return this.teams.deleteTeam(req.user.sub, academyId, teamId);
+        return this.teams.deleteTeam(req.user.id, academyId, teamId);
     }
+    // ============================================================
+    // TEAM PLAYERS
+    // ============================================================
     /**
-     * Add a player to a team.
+     * Add player to team.
+     *
+     * POST /api/v1/academies/:academyId/teams/:teamId/players
      */
     addPlayer(req, academyId, teamId, dto) {
-        return this.teams.addPlayer(req.user.sub, academyId, teamId, dto);
+        return this.teams.addPlayer(req.user.id, academyId, teamId, dto);
     }
     /**
-     * Remove a player from a team.
+     * Remove player from team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId/players/:playerId
      */
     removePlayer(req, academyId, teamId, playerId) {
-        return this.teams.removePlayer(req.user.sub, academyId, teamId, playerId);
+        return this.teams.removePlayer(req.user.id, academyId, teamId, playerId);
     }
+    // ============================================================
+    // TEAM COACHES
+    // ============================================================
     /**
-     * Add a coach to a team.
+     * Add coach to team.
+     *
+     * POST /api/v1/academies/:academyId/teams/:teamId/coaches
      */
     addCoach(req, academyId, teamId, dto) {
-        return this.teams.addCoach(req.user.sub, academyId, teamId, dto);
+        return this.teams.addCoach(req.user.id, academyId, teamId, dto);
     }
     /**
-     * Remove a coach from a team.
+     * Remove coach from team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId/coaches/:coachId
      */
     removeCoach(req, academyId, teamId, coachId) {
-        return this.teams.removeCoach(req.user.sub, academyId, teamId, coachId);
+        return this.teams.removeCoach(req.user.id, academyId, teamId, coachId);
     }
 };
 __decorate([
     UseGuards(JwtAuthGuard),
     Post(),
     __param(0, Req()),
-    __param(1, Param('academyId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
     __param(2, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, CreateTeamDto]),
@@ -93,15 +113,15 @@ __decorate([
 ], AcademyTeamsController.prototype, "createTeam", null);
 __decorate([
     Get(),
-    __param(0, Param('academyId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AcademyTeamsController.prototype, "getTeams", null);
 __decorate([
     Get(':teamId'),
-    __param(0, Param('academyId')),
-    __param(1, Param('teamId')),
+    __param(0, Param('academyId', new ParseUUIDPipe())),
+    __param(1, Param('teamId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
@@ -110,8 +130,8 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Patch(':teamId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('teamId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('teamId', new ParseUUIDPipe())),
     __param(3, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String, UpdateTeamDto]),
@@ -121,8 +141,8 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':teamId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('teamId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('teamId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", void 0)
@@ -131,8 +151,8 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':teamId/players'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('teamId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('teamId', new ParseUUIDPipe())),
     __param(3, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String, AddTeamPlayerDto]),
@@ -142,9 +162,9 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':teamId/players/:playerId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('teamId')),
-    __param(3, Param('playerId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('teamId', new ParseUUIDPipe())),
+    __param(3, Param('playerId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", void 0)
@@ -153,8 +173,8 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Post(':teamId/coaches'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('teamId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('teamId', new ParseUUIDPipe())),
     __param(3, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String, AddTeamCoachDto]),
@@ -164,9 +184,9 @@ __decorate([
     UseGuards(JwtAuthGuard),
     Delete(':teamId/coaches/:coachId'),
     __param(0, Req()),
-    __param(1, Param('academyId')),
-    __param(2, Param('teamId')),
-    __param(3, Param('coachId')),
+    __param(1, Param('academyId', new ParseUUIDPipe())),
+    __param(2, Param('teamId', new ParseUUIDPipe())),
+    __param(3, Param('coachId', new ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", void 0)

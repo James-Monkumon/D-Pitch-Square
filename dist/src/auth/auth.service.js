@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { ConflictException, Injectable, UnauthorizedException, } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { RoleName, UserStatus, } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes, } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -23,7 +24,20 @@ let AuthService = class AuthService {
         this.config = config;
     }
     /**
-     * Hash sensitive tokens before storing them in the database.
+     * Public self-registration is deliberately limited
+     * to ordinary platform roles.
+     *
+     * ADMIN and SUPER_ADMIN must never be created through
+     * the public auth registration flow.
+     */
+    publicRegistrationRoles = [
+        RoleName.PLAYER,
+        RoleName.ACADEMY,
+        RoleName.SCOUT,
+        RoleName.COACH,
+    ];
+    /**
+     * Hash sensitive tokens before storing them.
      */
     hashToken(token) {
         return createHash('sha256')
@@ -31,7 +45,7 @@ let AuthService = class AuthService {
             .digest('hex');
     }
     /**
-     * Generate access token and refresh token.
+     * Generate a new access token and refresh token.
      */
     async issueTokens(userId, email, roles) {
         const accessToken = await this.jwt.signAsync({
@@ -47,7 +61,8 @@ let AuthService = class AuthService {
             data: {
                 userId,
                 tokenHash: this.hashToken(refreshToken),
-                expiresAt: new Date(Date.now() + 30 * 86400000),
+                expiresAt: new Date(Date.now() +
+                    30 * 24 * 60 * 60 * 1000),
             },
         });
         return {
@@ -56,13 +71,30 @@ let AuthService = class AuthService {
         };
     }
     /**
-     * Register a new Player, Academy, Scout, or Coach.
+     * Register a public account.
      *
-     * ADMIN accounts cannot be created through
-     * public registration.
+     * Allowed:
+     * - PLAYER
+     * - ACADEMY
+     * - SCOUT
+     * - COACH
+     *
+     * ADMIN and SUPER_ADMIN are privileged roles
+     * and must not be created here.
      */
     async register(dto) {
-        const email = dto.email.toLowerCase();
+        const email = dto.email.trim().toLowerCase();
+        /**
+         * Defense in depth.
+         *
+         * RegisterDto already restricts the HTTP request,
+         * but the service independently enforces the same
+         * authorization rule.
+         */
+        const requestedRole = dto.role;
+        if (!this.publicRegistrationRoles.includes(requestedRole)) {
+            throw new ConflictException('Invalid registration role');
+        }
         const existingUser = await this.prisma.user.findUnique({
             where: {
                 email,
@@ -73,17 +105,18 @@ let AuthService = class AuthService {
         }
         const role = await this.prisma.role.findUnique({
             where: {
-                name: dto.role,
+                name: requestedRole,
             },
         });
         if (!role ||
-            role.name === 'ADMIN') {
+            !this.publicRegistrationRoles.includes(role.name)) {
             throw new ConflictException('Invalid registration role');
         }
+        const passwordHash = await argon2.hash(dto.password);
         const user = await this.prisma.user.create({
             data: {
                 email,
-                passwordHash: await argon2.hash(dto.password),
+                passwordHash,
                 roles: {
                     create: {
                         roleId: role.id,
@@ -101,19 +134,22 @@ let AuthService = class AuthService {
         /**
          * Create email verification token.
          *
-         * For development we return this token
-         * in the response.
-         * In production it will be sent by email.
+         * Development:
+         * raw token is returned in the response.
+         *
+         * Production:
+         * raw token should be delivered by email only.
          */
         const verificationToken = randomBytes(32).toString('base64url');
         await this.prisma.emailVerification.create({
             data: {
                 userId: user.id,
                 tokenHash: this.hashToken(verificationToken),
-                expiresAt: new Date(Date.now() + 86400000),
+                expiresAt: new Date(Date.now() +
+                    24 * 60 * 60 * 1000),
             },
         });
-        const roles = user.roles.map((r) => r.role.name);
+        const roles = user.roles.map((userRole) => userRole.role.name);
         const tokens = await this.issueTokens(user.id, user.email, roles);
         return {
             success: true,
@@ -135,7 +171,7 @@ let AuthService = class AuthService {
      * Login an existing user.
      */
     async login(dto) {
-        const email = dto.email.toLowerCase();
+        const email = dto.email.trim().toLowerCase();
         const user = await this.prisma.user.findUnique({
             where: {
                 email,
@@ -148,14 +184,38 @@ let AuthService = class AuthService {
                 },
             },
         });
-        if (!user ||
-            !(await argon2.verify(user.passwordHash, dto.password))) {
+        if (!user) {
             throw new UnauthorizedException('Invalid email or password');
         }
-        if (user.status === 'SUSPENDED') {
+        /**
+         * argon2.verify() can throw when the stored
+         * password hash is malformed or corrupted.
+         *
+         * That must behave like invalid credentials,
+         * not produce an internal-server error.
+         */
+        let passwordMatches = false;
+        try {
+            passwordMatches =
+                await argon2.verify(user.passwordHash, dto.password);
+        }
+        catch {
+            passwordMatches = false;
+        }
+        if (!passwordMatches) {
+            throw new UnauthorizedException('Invalid email or password');
+        }
+        /**
+         * Preserve the current account policy:
+         *
+         * PENDING users may authenticate.
+         * SUSPENDED users may not.
+         */
+        if (user.status ===
+            UserStatus.SUSPENDED) {
             throw new UnauthorizedException('Account is suspended');
         }
-        const roles = user.roles.map((r) => r.role.name);
+        const roles = user.roles.map((userRole) => userRole.role.name);
         const tokens = await this.issueTokens(user.id, user.email, roles);
         return {
             success: true,
@@ -173,17 +233,19 @@ let AuthService = class AuthService {
         };
     }
     /**
-     * Refresh access token.
+     * Rotate a refresh token.
      *
-     * Refresh-token rotation:
+     * Security flow:
      *
-     * 1. Hash incoming refresh token.
-     * 2. Find matching database token.
-     * 3. Verify it is not expired.
-     * 4. Verify it has not been revoked.
-     * 5. Revoke the old token.
-     * 6. Generate a new access token.
-     * 7. Generate a new refresh token.
+     * 1. Hash the incoming raw token.
+     * 2. Locate the stored token.
+     * 3. Reject revoked tokens.
+     * 4. Reject expired tokens.
+     * 5. Reload CURRENT user state from the database.
+     * 6. Reload CURRENT roles from the database.
+     * 7. Reject suspended/missing accounts.
+     * 8. Atomically claim/revoke the old refresh token.
+     * 9. Issue replacement tokens using current roles.
      */
     async refresh(dto) {
         const tokenHash = this.hashToken(dto.refreshToken);
@@ -191,45 +253,67 @@ let AuthService = class AuthService {
             where: {
                 tokenHash,
             },
-            include: {
-                user: {
-                    include: {
-                        roles: {
-                            include: {
-                                role: true,
-                            },
-                        },
-                    },
-                },
+            select: {
+                id: true,
+                userId: true,
+                expiresAt: true,
+                revokedAt: true,
             },
         });
-        if (!storedToken) {
-            throw new UnauthorizedException('Invalid refresh token');
-        }
-        if (storedToken.revokedAt) {
+        if (!storedToken ||
+            storedToken.revokedAt) {
             throw new UnauthorizedException('Invalid refresh token');
         }
         if (storedToken.expiresAt.getTime() <=
             Date.now()) {
             throw new UnauthorizedException('Refresh token has expired');
         }
-        const user = storedToken.user;
-        if (user.status === 'SUSPENDED') {
+        /**
+         * Explicitly reload the current account and
+         * current roles.
+         *
+         * We do not trust authorization state from an
+         * old access token or old session.
+         */
+        const user = await this.prisma.user.findUnique({
+            where: {
+                id: storedToken.userId,
+            },
+            include: {
+                roles: {
+                    include: {
+                        role: true,
+                    },
+                },
+            },
+        });
+        if (!user) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+        if (user.status ===
+            UserStatus.SUSPENDED) {
             throw new UnauthorizedException('Account is suspended');
         }
-        const roles = user.roles.map((r) => r.role.name);
+        const roles = user.roles.map((userRole) => userRole.role.name);
         /**
-         * Revoke the old refresh token BEFORE
-         * issuing a replacement.
+         * Claim/revoke the old token only if it is still
+         * active.
+         *
+         * This prevents two simultaneous refresh requests
+         * from successfully rotating the same token.
          */
-        await this.prisma.refreshToken.update({
+        const revokeResult = await this.prisma.refreshToken.updateMany({
             where: {
                 id: storedToken.id,
+                revokedAt: null,
             },
             data: {
                 revokedAt: new Date(),
             },
         });
+        if (revokeResult.count !== 1) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
         const tokens = await this.issueTokens(user.id, user.email, roles);
         return {
             success: true,
@@ -293,7 +377,7 @@ let AuthService = class AuthService {
                 },
                 data: {
                     emailVerifiedAt: now,
-                    status: 'ACTIVE',
+                    status: UserStatus.ACTIVE,
                 },
             }),
         ]);
@@ -303,7 +387,7 @@ let AuthService = class AuthService {
             data: {
                 email: user.email,
                 emailVerifiedAt: now,
-                status: 'ACTIVE',
+                status: UserStatus.ACTIVE,
             },
         };
     }
@@ -311,7 +395,7 @@ let AuthService = class AuthService {
      * Generate a new email verification token.
      */
     async resendVerification(dto) {
-        const email = dto.email.toLowerCase();
+        const email = dto.email.trim().toLowerCase();
         const user = await this.prisma.user.findUnique({
             where: {
                 email,
@@ -345,7 +429,8 @@ let AuthService = class AuthService {
             data: {
                 userId: user.id,
                 tokenHash: this.hashToken(verificationToken),
-                expiresAt: new Date(Date.now() + 86400000),
+                expiresAt: new Date(Date.now() +
+                    24 * 60 * 60 * 1000),
             },
         });
         return {
@@ -354,8 +439,7 @@ let AuthService = class AuthService {
             data: {
                 /**
                  * Development only.
-                 * Remove this field when real email
-                 * delivery is implemented.
+                 * Remove once real email delivery exists.
                  */
                 verificationToken,
             },
@@ -364,14 +448,11 @@ let AuthService = class AuthService {
     /**
      * Request a password reset.
      *
-     * We intentionally return the same response whether
-     * or not the email exists to prevent account enumeration.
-     *
-     * For development, the reset token is returned.
-     * In production it will be sent by email.
+     * The response deliberately does not reveal
+     * whether the account exists.
      */
     async forgotPassword(dto) {
-        const email = dto.email.toLowerCase();
+        const email = dto.email.trim().toLowerCase();
         const user = await this.prisma.user.findUnique({
             where: {
                 email,
@@ -406,7 +487,9 @@ let AuthService = class AuthService {
             success: true,
             message: 'Password reset instructions generated successfully',
             data: {
-                // Development only.
+                /**
+                 * Development only.
+                 */
                 resetToken,
             },
         };
@@ -474,6 +557,10 @@ let AuthService = class AuthService {
             data: null,
         };
     }
+    /**
+     * Revoke every currently active refresh token
+     * belonging to this user.
+     */
     async logout(userId) {
         await this.prisma.refreshToken.updateMany({
             where: {

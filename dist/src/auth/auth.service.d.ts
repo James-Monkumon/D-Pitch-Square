@@ -14,18 +14,32 @@ export declare class AuthService {
     private readonly config;
     constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService);
     /**
-     * Hash sensitive tokens before storing them in the database.
+     * Public self-registration is deliberately limited
+     * to ordinary platform roles.
+     *
+     * ADMIN and SUPER_ADMIN must never be created through
+     * the public auth registration flow.
+     */
+    private readonly publicRegistrationRoles;
+    /**
+     * Hash sensitive tokens before storing them.
      */
     private hashToken;
     /**
-     * Generate access token and refresh token.
+     * Generate a new access token and refresh token.
      */
     private issueTokens;
     /**
-     * Register a new Player, Academy, Scout, or Coach.
+     * Register a public account.
      *
-     * ADMIN accounts cannot be created through
-     * public registration.
+     * Allowed:
+     * - PLAYER
+     * - ACADEMY
+     * - SCOUT
+     * - COACH
+     *
+     * ADMIN and SUPER_ADMIN are privileged roles
+     * and must not be created here.
      */
     register(dto: RegisterDto): Promise<{
         success: boolean;
@@ -37,7 +51,7 @@ export declare class AuthService {
                 id: string;
                 email: string;
                 status: import("@prisma/client").$Enums.UserStatus;
-                roles: string[];
+                roles: import("@prisma/client").$Enums.RoleName[];
             };
             verificationToken: string;
         };
@@ -54,23 +68,25 @@ export declare class AuthService {
             user: {
                 id: string;
                 email: string;
-                status: "PENDING" | "ACTIVE";
-                roles: string[];
+                status: "ACTIVE" | "PENDING";
+                roles: import("@prisma/client").$Enums.RoleName[];
             };
         };
     }>;
     /**
-     * Refresh access token.
+     * Rotate a refresh token.
      *
-     * Refresh-token rotation:
+     * Security flow:
      *
-     * 1. Hash incoming refresh token.
-     * 2. Find matching database token.
-     * 3. Verify it is not expired.
-     * 4. Verify it has not been revoked.
-     * 5. Revoke the old token.
-     * 6. Generate a new access token.
-     * 7. Generate a new refresh token.
+     * 1. Hash the incoming raw token.
+     * 2. Locate the stored token.
+     * 3. Reject revoked tokens.
+     * 4. Reject expired tokens.
+     * 5. Reload CURRENT user state from the database.
+     * 6. Reload CURRENT roles from the database.
+     * 7. Reject suspended/missing accounts.
+     * 8. Atomically claim/revoke the old refresh token.
+     * 9. Issue replacement tokens using current roles.
      */
     refresh(dto: RefreshTokenDto): Promise<{
         success: boolean;
@@ -97,7 +113,7 @@ export declare class AuthService {
         data: {
             email: string;
             emailVerifiedAt: Date;
-            status: string;
+            status: "ACTIVE";
         };
     }>;
     /**
@@ -113,8 +129,7 @@ export declare class AuthService {
         data: {
             /**
              * Development only.
-             * Remove this field when real email
-             * delivery is implemented.
+             * Remove once real email delivery exists.
              */
             verificationToken: string;
         };
@@ -122,11 +137,8 @@ export declare class AuthService {
     /**
      * Request a password reset.
      *
-     * We intentionally return the same response whether
-     * or not the email exists to prevent account enumeration.
-     *
-     * For development, the reset token is returned.
-     * In production it will be sent by email.
+     * The response deliberately does not reveal
+     * whether the account exists.
      */
     forgotPassword(dto: ForgotPasswordDto): Promise<{
         success: boolean;
@@ -136,6 +148,9 @@ export declare class AuthService {
         success: boolean;
         message: string;
         data: {
+            /**
+             * Development only.
+             */
             resetToken: string;
         };
     }>;
@@ -147,6 +162,10 @@ export declare class AuthService {
         message: string;
         data: null;
     }>;
+    /**
+     * Revoke every currently active refresh token
+     * belonging to this user.
+     */
     logout(userId: string): Promise<{
         success: boolean;
         message: string;

@@ -6,33 +6,38 @@ import { CreateTeamDto } from './dto/create-team.dto.js';
 import { UpdateTeamDto } from './dto/update-team.dto.js';
 type AuthenticatedRequest = Request & {
     user: {
-        sub: string;
+        id: string;
+        email: string;
+        roles: string[];
     };
 };
 export declare class AcademyTeamsController {
     private readonly teams;
     constructor(teams: AcademyTeamsService);
     /**
-     * Create a team.
+     * Create team.
+     *
+     * POST /api/v1/academies/:academyId/teams
      */
     createTeam(req: AuthenticatedRequest, academyId: string, dto: CreateTeamDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
     }>;
     /**
-     * Get all teams belonging to an academy.
+     * Get academy teams.
      *
-     * Public endpoint.
+     * GET /api/v1/academies/:academyId/teams
      */
     getTeams(academyId: string): Promise<{
         success: boolean;
@@ -44,19 +49,20 @@ export declare class AcademyTeamsController {
             };
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         })[];
     }>;
     /**
      * Get one team.
      *
-     * Public endpoint.
+     * GET /api/v1/academies/:academyId/teams/:teamId
      */
     getTeam(academyId: string, teamId: string): Promise<{
         success: boolean;
@@ -64,16 +70,19 @@ export declare class AcademyTeamsController {
         data: {
             players: {
                 id: string;
-                jerseyNumber: number | null;
+                leftAt: Date | null;
                 playerId: string;
+                jerseyNumber: number | null;
+                joinedAt: Date;
                 player: {
                     id: string;
-                    profilePicture: string | null;
-                    fullName: string;
-                    nationality: string | null;
                     country: string | null;
                     state: string | null;
                     city: string | null;
+                    jerseyNumber: number | null;
+                    profilePicture: string | null;
+                    fullName: string;
+                    nationality: string | null;
                     currentClub: string | null;
                     currentAcademyName: string | null;
                     height: number | null;
@@ -81,61 +90,64 @@ export declare class AcademyTeamsController {
                     preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                     primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                     secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-                    jerseyNumber: number | null;
                 };
-                joinedAt: Date;
-                leftAt: Date | null;
             }[];
             coaches: {
                 id: string;
+                leftAt: Date | null;
+                joinedAt: Date;
                 coachId: string;
                 role: string | null;
                 coach: {
                     id: string;
-                    profilePicture: string | null;
-                    fullName: string;
                     country: string | null;
                     state: string | null;
                     city: string | null;
+                    profilePicture: string | null;
+                    fullName: string;
                     currentAcademyClub: string | null;
                     coachingRole: string | null;
                     coachingLicense: string | null;
                     coachingCertification: string | null;
                     yearsOfExperience: number | null;
                 };
-                joinedAt: Date;
-                leftAt: Date | null;
             }[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
     }>;
     /**
-     * Update a team.
+     * Update team.
+     *
+     * PATCH /api/v1/academies/:academyId/teams/:teamId
      */
     updateTeam(req: AuthenticatedRequest, academyId: string, teamId: string, dto: UpdateTeamDto): Promise<{
         success: boolean;
         message: string;
         data: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            description: string | null;
             academyId: string;
+            name: string;
             ageGroup: string | null;
             category: string | null;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
     }>;
     /**
-     * Delete a team.
+     * Delete team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId
      */
     deleteTeam(req: AuthenticatedRequest, academyId: string, teamId: string): Promise<{
         success: boolean;
@@ -143,34 +155,37 @@ export declare class AcademyTeamsController {
         data: null;
     }>;
     /**
-     * Add a player to a team.
+     * Add player to team.
+     *
+     * POST /api/v1/academies/:academyId/teams/:teamId/players
      */
     addPlayer(req: AuthenticatedRequest, academyId: string, teamId: string, dto: AddTeamPlayerDto): Promise<{
         success: boolean;
         message: string;
         data: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            leftAt: Date | null;
+            teamId: string;
+            playerId: string;
+            jerseyNumber: number | null;
+            joinedAt: Date;
             player: {
                 id: string;
+                jerseyNumber: number | null;
                 profilePicture: string | null;
                 fullName: string;
                 preferredFoot: import("@prisma/client").$Enums.PreferredFoot | null;
                 primaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
                 secondaryPosition: import("@prisma/client").$Enums.PlayerPosition | null;
-                jerseyNumber: number | null;
             };
-        } & {
-            id: string;
-            jerseyNumber: number | null;
-            createdAt: Date;
-            updatedAt: Date;
-            playerId: string;
-            joinedAt: Date;
-            leftAt: Date | null;
-            teamId: string;
         };
     }>;
     /**
-     * Remove a player from a team.
+     * Remove player from team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId/players/:playerId
      */
     removePlayer(req: AuthenticatedRequest, academyId: string, teamId: string, playerId: string): Promise<{
         success: boolean;
@@ -178,12 +193,22 @@ export declare class AcademyTeamsController {
         data: null;
     }>;
     /**
-     * Add a coach to a team.
+     * Add coach to team.
+     *
+     * POST /api/v1/academies/:academyId/teams/:teamId/coaches
      */
     addCoach(req: AuthenticatedRequest, academyId: string, teamId: string, dto: AddTeamCoachDto): Promise<{
         success: boolean;
         message: string;
         data: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            leftAt: Date | null;
+            teamId: string;
+            joinedAt: Date;
+            coachId: string;
+            role: string | null;
             coach: {
                 id: string;
                 profilePicture: string | null;
@@ -192,19 +217,12 @@ export declare class AcademyTeamsController {
                 coachingRole: string | null;
                 yearsOfExperience: number | null;
             };
-        } & {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            coachId: string;
-            role: string | null;
-            joinedAt: Date;
-            leftAt: Date | null;
-            teamId: string;
         };
     }>;
     /**
-     * Remove a coach from a team.
+     * Remove coach from team.
+     *
+     * DELETE /api/v1/academies/:academyId/teams/:teamId/coaches/:coachId
      */
     removeCoach(req: AuthenticatedRequest, academyId: string, teamId: string, coachId: string): Promise<{
         success: boolean;

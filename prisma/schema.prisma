@@ -19,6 +19,7 @@ enum RoleName {
   SCOUT
   COACH
   ADMIN
+  SUPER_ADMIN
 }
 
 enum VerificationStatus {
@@ -131,6 +132,10 @@ model User {
   coachLikes   CoachLike[]
   scoutLikes   ScoutLike[]
 
+  // Administrative audit trail.
+  // An administrator can perform many auditable actions.
+  adminAuditLogs AdminAuditLog[] @relation("AdminAuditActor")
+
   @@map("users")
 }
 
@@ -179,6 +184,50 @@ model RolePermission {
   @@id([roleId, permissionId])
   @@index([permissionId])
   @@map("role_permissions")
+}
+
+model AdminAuditLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Administrator/Super Admin who performed the action.
+  actorUserId String @map("actor_user_id") @db.Uuid
+
+  // Examples:
+  // ADMIN_CREATED
+  // ADMIN_SUSPENDED
+  // ADMIN_REACTIVATED
+  // PROFILE_APPROVED
+  // PROFILE_REJECTED
+  // ACHIEVEMENT_VERIFIED
+  // ACHIEVEMENT_REJECTED
+  action String @db.VarChar(150)
+
+  // Type of entity affected by the action.
+  // Examples:
+  // USER
+  // PLAYER_PROFILE
+  // COACH_PROFILE
+  // SCOUT_PROFILE
+  // ACADEMY_PROFILE
+  // ACHIEVEMENT
+  targetType String? @map("target_type") @db.VarChar(100)
+
+  // UUID of the affected entity when applicable.
+  targetId String? @map("target_id") @db.Uuid
+
+  // Additional information about the administrative action.
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor User @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }
 
 model RefreshToken {
@@ -508,8 +557,9 @@ model AcademyTeam {
 
   description String? @db.Text
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   academy AcademyProfile @relation(fields: [academyId], references: [id], onDelete: Cascade)
 
@@ -517,6 +567,7 @@ model AcademyTeam {
   coaches AcademyTeamCoach[]
 
   @@index([academyId])
+  @@index([deletedAt])
   @@map("academy_teams")
 }
 
