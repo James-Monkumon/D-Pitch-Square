@@ -21,3 +21,5 @@ Initial endpoints:
 - GET /users/me
 
 Public registration supports PLAYER, ACADEMY, SCOUT and COACH. ADMIN is provisioned by authorized administration.
+
+This repository contains the public portfolio version of the platform, including authentication, role-based user profiles for players, coaches, scouts, academies, administrators, and super-admin controls. Active development and additional proprietary features continue in a private repository.
